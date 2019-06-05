@@ -1,0 +1,32 @@
+Challenge details..
+
+The MVP for this web application must include:
+  - Playing against the computer
+  - Leaderboards
+
+Other desired features include, but are not required:
+
+ - Hot seat play (two players, one screen)
+ - Online play
+ - The ability to spectate games in progress
+ - Watch previous matches
+ - Tic-Tac-Toe-Royale
+
+You must use Laravel, Vue, and a relational database. You may use any publicly available packages.
+If you choose to use external packages, be prepared to explain why you chose that package over the alternatives.
+
+Please spend no more than four hours on this. You are not expected to complete all desired features.
+If you do not, be prepared to explain why you prioritized the features you did in terms of the following:
+
+ - Maximizing daily active users from the target audience.
+ - Minimizing implementation time of the entire feature set.
+
+
+
+started 5:21 pm 
+
+
+steps:
+- initialize
+- add auth
+- cleanup views and structure
