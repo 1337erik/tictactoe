@@ -2016,7 +2016,7 @@ __webpack_require__.r(__webpack_exports__);
     },
     declareWinner: function declareWinner() {
       var player = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      if (player) console.log('Player ' + player.id + ' has fucking sent it!');else {
+      if (player) console.log('Player ' + player.id + ' has sent it!');else {
         console.log('CATS GAME');
         document.querySelectorAll('.cell').forEach(function (cell) {
           return cell.classList.add('tied-up');

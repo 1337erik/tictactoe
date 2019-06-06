@@ -156,7 +156,7 @@
             },
             declareWinner( player = null ){
 
-                if( player ) console.log( 'Player ' + player.id + ' has fucking sent it!' );
+                if( player ) console.log( 'Player ' + player.id + ' has sent it!' );
                 else {
 
                     console.log( 'CATS GAME' );

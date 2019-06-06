@@ -2,8 +2,6 @@
 
 @section('content')
 
-    <div class="">
-
-        show a single game
-    </div>
+    {{ $game }}
+    <tic-tac-toe></tic-tac-toe>
 @endsection

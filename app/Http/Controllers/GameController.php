@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Game;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class GameController extends Controller
 {
@@ -11,7 +12,7 @@ class GameController extends Controller
      * Display a listing of the resource.
      * 
      * 
-     * used for the main game board to show..
+     * used for creating a game before showing it..
      * Relevant details:
      *  - vs AI?
      *  - is player signed in?
@@ -22,8 +23,29 @@ class GameController extends Controller
     public function index()
     {
 
-        return view( 'tictactoe.board' );
+        // Big TODO:
+        // prevent new games from starting..
+        // maybe fetch an existing game with 'incomplete' status?
+        // or regularly clear out empty/unfinished games..
+        // I'd like to not have to enforce signup to play against AI..
+
+        // Step 1: Initialize. Set or create a new game, then set or initialize game state
+        $game = new Game([
+
+            'type' => 1 // tic-tac-toe is the only one allowed right now. eventually could be chess, cards, etc.
+        ]);
+        $game->save();
+
+        $game->states()->create(); // create a blank state for the game to begin if there isn't already one
+
+        // Step 2: if the current player is logged in then associate them to the game
+        $user = Auth::user();
+        if( $user ) $user->games()->attach( $game );
+
+        return redirect()->route( 'play.games.show', compact( 'game' ) );
     }
+
+
 
     public function startLive( Game $game )
     {
@@ -61,7 +83,7 @@ class GameController extends Controller
     public function show( Game $game )
     {
 
-        return view( 'tictactoe.show' );
+        return view( 'tictactoe.show', compact( 'game' ) );
     }
 
     public function showPast( Game $game )
