@@ -19,3 +19,13 @@ Route::get( '/', function () {
 Auth::routes();
 
 Route::get( '/home', 'HomeController@index' )->name( 'home' );
+
+
+Route::get( 'games/seePast',   'GameController@showPast'  )->name( 'play.games.showPast'  );
+Route::get( 'games/seeLive',   'GameController@showLive'  )->name( 'play.games.showLive'  );
+Route::get( 'games/startLive', 'GameController@startLive' )->name( 'play.games.startLive' );
+Route::resource( 'games', 'GameController', [
+
+    'as' => 'play'
+]);
+Route::apiResource( 'states', 'StateController' );

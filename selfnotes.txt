@@ -1,5 +1,20 @@
 Challenge details..
 
+Todo:
+    Epic => getting play against AI working
+        1. when navigating over, start a new game
+        2. create a blank state for that game
+        3. upon move, record board position
+        4. implement 'take back turn'
+        6. add migration for game status ( boolean, done or nah )
+        5. upon win,
+            - set status of game to done
+            - figure out how to mark the winner with a point.. figure out the leaderboard thing..
+        6. if a game is done, be able to cycle through the moves.. or states
+        7. display leaderboard on main page
+        8. implement ability to play against another human ( from playAI )
+
+
 The MVP for this web application must include:
   - Playing against the computer
   - Leaderboards
@@ -20,14 +35,3 @@ If you do not, be prepared to explain why you prioritized the features you did i
 
  - Maximizing daily active users from the target audience.
  - Minimizing implementation time of the entire feature set.
-
-
-
-started 5:21 pm 
-
-
-steps:
-- initialize
-- add auth
-- cleanup views and structure
-- get database working

@@ -1947,7 +1947,9 @@ __webpack_require__.r(__webpack_exports__);
         return player.cells = [];
       });
       var cells = document.querySelectorAll('.cell').forEach(function (cell) {
-        return cell.innerHTML = '';
+        cell.innerHTML = '';
+        cell.classList.remove('winner-winner');
+        cell.classList.remove('tied-up');
       });
     },
     claimCell: function claimCell(id) {
@@ -1968,7 +1970,12 @@ __webpack_require__.r(__webpack_exports__);
         if (win) this.declareWinner(player); // and congratulate the winner..
         else {
             if (++this.totalMoves == 9) this.declareWinner(); // call cats-game if neccessary,
-            else this.playersTurn = (this.playersTurn + 1) % 2; // or switch players
+            else {
+                this.playersTurn = (this.playersTurn + 1) % 2; // or switch players
+                // and check if new player is if AI controlled to prompt 'it' to move..
+
+                this.makeZuckerbergProud();
+              }
           }
       }
     },
@@ -1988,6 +1995,11 @@ __webpack_require__.r(__webpack_exports__);
 
           if (count == 3) {
             _this2.gameOver = true;
+
+            _this2.winCombos[i].forEach(function (cellId) {
+              return document.getElementById(cellId).classList.add('winner-winner');
+            });
+
             return "break";
           }
         };
@@ -2004,8 +2016,126 @@ __webpack_require__.r(__webpack_exports__);
     },
     declareWinner: function declareWinner() {
       var player = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      if (player) console.log('Player ' + player.id + ' has fucking sent it!');else console.log('CATS GAME');
+      if (player) console.log('Player ' + player.id + ' has fucking sent it!');else {
+        console.log('CATS GAME');
+        document.querySelectorAll('.cell').forEach(function (cell) {
+          return cell.classList.add('tied-up');
+        });
+      }
+    },
+    makeZuckerbergProud: function makeZuckerbergProud() {
+      var _this3 = this;
+
+      // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
+      var currentPlayer = this.players.find(function (player) {
+        return player.id == _this3.playersTurn;
+      });
+      var opponent = this.players.find(function (player) {
+        return player.id != _this3.playersTurn;
+      });
+
+      if (currentPlayer.type == 'computer') {
+        // master algorithm..
+        // step 1: seem to be alive..
+        console.log('Zuckerberg: hmm..');
+        var rand;
+        var cells = document.querySelectorAll('.cell');
+
+        for (var k = 0; k < cells.length; k++) {
+          // just make sure the chosen spot is available
+          console.log('checking k: ' + k);
+          rand = Math.floor(Math.random() * 9);
+
+          if (cells[rand].innerHTML.trim() == '') {
+            console.log('ill just go here: ' + rand);
+            this.claimCell(rand);
+            break;
+          }
+        } // step 2: if its the first move AI is taking, just pick anything
+
+        /*
+        if( currentPlayer.cells.length == 0 ){
+             let rand;
+            let cells = document.querySelectorAll( '.cell' );
+            for( let k = 0; k < cells.length; k++ ){
+                // just make sure the chosen spot is available
+                 rand = Math.floor( Math.random() * 9 );
+                if( cells[ rand ].innerHTML.trim() == '' ) break;
+            }
+             console.log( 'ill just go here..' );
+            this.claimCell( rand );
+        } else {
+            // else, step 3: figure out if opponent has any winning moves to block
+             let count        = null;
+            let neededCell   = null;
+            let decisionMade = null;
+             if( opponent.cells.length >= 2 ){
+                // blocking moves can only exist if the opponents taken at least 2 moves..
+                console.log( 'you might have something..' );
+                 for( let i = 0; i < this.winCombos.length; i++ ){
+                     count = 0;
+                     opponent.cells.forEach( cell => {
+                         if( this.winCombos[ i ].includes( cell ) ){
+                             count++;
+                        } else neededCell = cell; // if count gets to 2, then the third will be stored here
+                    });
+                     if( count == 2 ){
+                        // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
+                        // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
+                         decisionMade = neededCell;
+                        console.log( decisionMade );
+                        break;
+                    }
+                }
+            }
+             if( decisionMade ) {
+                // blocking move found.. take it
+                 console.log( 'YOU CANT BLOCK ME' );
+                setTimeout( this.claimCell( neededCell ), 500 );
+            } else {
+                // if opponent has no winning moves, step 4: find 'my' best next move, either a second-out-of-three or a three-out-of-three
+                 for( let i = 0; i < this.winCombos.length; i++ ){
+                     count          = 0;
+                     let candidateCount = 0;
+                    let candidateCell  = null;
+                     decisionMade   = null;
+                     currentPlayer.cells.forEach( cell => {
+                         if( this.winCombos[ i ].includes( cell ) ){
+                             count++;
+                        } else candidateCell = cell; // if count gets above 1, then at least move towards completing this one..
+                    });
+                     if( count == 2 ){
+                        // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
+                         
+                        break;
+                    } 
+                }
+            }
+        }
+        */
+
+      }
     }
+  },
+  computed: {
+    currentPlayer: function currentPlayer() {},
+    winningCell: function winningCell() {// this.winCombos.forEach( cell => {
+      //     count = 0;
+      //     this.currentPlayer.cells.forEach( cell => {
+      //         if( this.winCombos[ i ].includes( cell ) ){
+      //             count++;
+      //         } else neededCell = cell; // if count gets to 2, then the third will be stored here
+      //     });
+      //     if( count == 2 ){
+      //         // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
+      //         // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
+      //         decisionMade = neededCell;
+      //         console.log( decisionMade );
+      //         break;
+      //     }
+      // });
+    },
+    nextBestCell: function nextBestCell() {}
   },
   mounted: function mounted() {
     this.freshGame();
@@ -6471,7 +6601,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.player-outer-wrapper[data-v-c3a085b2] {\n\n    display: flex;\n    justify-content: space-between;\n    width: 100%;\n}\n.player-inner-wrapper[data-v-c3a085b2] {\n\n    text-align: center;\n    flex: 1;\n}\n.yes-turn[data-v-c3a085b2] {\n\n    font-weight: bold;\n    color: blue;\n}\n.outer-wrap[data-v-c3a085b2] {\n\n    margin-top: 65px;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n}\n.cell[data-v-c3a085b2] {\n\n    border: 2px solid #333;\n    height: 100px;\n    width: 100px;\n    font-size: 45px;\n    cursor: pointer;\n\n\n    text-align: center;\n    vertical-align: middle;\n}\ntable[data-v-c3a085b2] {\n\n    margin-top: 35px;\n    border-collapse: collapse;\n    width: 100%;\n    max-width: 300px;\n}\ntable tr:first-child td[data-v-c3a085b2] {\n\n    border-top: 0;\n}\ntable tr:last-child td[data-v-c3a085b2] {\n\n    border-bottom: 0;\n}\ntable tr td[data-v-c3a085b2]:first-child {\n\n    border-left: 0;\n}\ntable tr td[data-v-c3a085b2]:last-child {\n\n    border-right: 0;\n}\n", ""]);
+exports.push([module.i, "\n.player-outer-wrapper[data-v-c3a085b2] {\n\n    display: flex;\n    justify-content: space-between;\n    width: 100%;\n}\n.player-inner-wrapper[data-v-c3a085b2] {\n\n    text-align: center;\n    flex: 1;\n}\n.yes-turn[data-v-c3a085b2] {\n\n    font-weight: bold;\n    color: blue;\n}\n.outer-wrap[data-v-c3a085b2] {\n\n    margin-top: 65px;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n}\n.cell[data-v-c3a085b2] {\n\n    border: 2px solid #333;\n    height: 100px;\n    width: 100px;\n    font-size: 45px;\n    cursor: pointer;\n\n\n    text-align: center;\n    vertical-align: middle;\n}\n.winner-winner[data-v-c3a085b2] {\n\n    background-color: rgba(3, 3, 150, 0.521);\n}\n.tied-up[data-v-c3a085b2] {\n\n    background-color: rgba(148, 5, 5, 0.596);\n}\ntable[data-v-c3a085b2] {\n\n    margin-top: 35px;\n    border-collapse: collapse;\n    width: 100%;\n    max-width: 300px;\n}\ntable tr:first-child td[data-v-c3a085b2] {\n\n    border-top: 0;\n}\ntable tr:last-child td[data-v-c3a085b2] {\n\n    border-bottom: 0;\n}\ntable tr td[data-v-c3a085b2]:first-child {\n\n    border-left: 0;\n}\ntable tr td[data-v-c3a085b2]:last-child {\n\n    border-right: 0;\n}\n", ""]);
 
 // exports
 

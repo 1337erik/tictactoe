@@ -94,7 +94,12 @@
                 this.totalMoves  = 0;
                 this.players.forEach( player => player.cells = [] );
 
-                let cells = document.querySelectorAll( '.cell' ).forEach( cell => cell.innerHTML = '' );
+                let cells = document.querySelectorAll( '.cell' ).forEach( cell => {
+
+                    cell.innerHTML = '';
+                    cell.classList.remove( 'winner-winner' );
+                    cell.classList.remove( 'tied-up' );
+                });
             },
             claimCell( id ){
 
@@ -103,7 +108,7 @@
                 if( !this.gameOver && cell.innerHTML.trim() == '' ){
                     // only if a games still on and clicking a blank cell..
 
-                    const player = this.players.find( player => player.id == this.playersTurn );
+                    const player   = this.players.find( player => player.id == this.playersTurn );
                     cell.innerHTML = player.marker; // apply the appropriate marker
                     player.cells.push( id );
 
@@ -112,7 +117,13 @@
                     else {
 
                         if( ++this.totalMoves == 9 ) this.declareWinner(); // call cats-game if neccessary,
-                        else this.playersTurn = ( this.playersTurn + 1 ) % 2; // or switch players
+                        else {
+
+                            this.playersTurn = ( this.playersTurn + 1 ) % 2; // or switch players
+
+                            // and check if new player is if AI controlled to prompt 'it' to move..
+                            this.makeZuckerbergProud();
+                        }
                     }
                 }
             },
@@ -135,6 +146,8 @@
                         if( count == 3 ){
 
                             this.gameOver = true
+
+                            this.winCombos[ i ].forEach( cellId => document.getElementById( cellId ).classList.add( 'winner-winner' ) );
                             break;
                         }
                     }
@@ -144,7 +157,158 @@
             declareWinner( player = null ){
 
                 if( player ) console.log( 'Player ' + player.id + ' has fucking sent it!' );
-                else console.log( 'CATS GAME' );
+                else {
+
+                    console.log( 'CATS GAME' );
+                    document.querySelectorAll( '.cell' ).forEach( cell => cell.classList.add( 'tied-up' ) );
+                }
+            },
+            makeZuckerbergProud(){
+                // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
+
+                const currentPlayer = this.players.find( player => player.id == this.playersTurn );
+                const opponent      = this.players.find( player => player.id != this.playersTurn );
+
+                if( currentPlayer.type == 'computer' ){
+
+                    // master algorithm..
+                    // step 1: seem to be alive..
+                    console.log( 'Zuckerberg: hmm..' );
+
+                    let rand;
+                    let cells = document.querySelectorAll( '.cell' );
+                    for( let k = 0; k < cells.length; k++ ){
+                        // just make sure the chosen spot is available
+                        console.log( 'checking k: ' + k );
+
+                        rand = Math.floor( Math.random() * 9 );
+                        if( cells[ rand ].innerHTML.trim() == '' ){
+
+                            console.log( 'ill just go here: ' + rand );
+                            this.claimCell( rand );
+                            break;
+                        }
+                    }
+
+                    // step 2: if its the first move AI is taking, just pick anything
+                    /*
+                    if( currentPlayer.cells.length == 0 ){
+
+                        let rand;
+                        let cells = document.querySelectorAll( '.cell' );
+                        for( let k = 0; k < cells.length; k++ ){
+                            // just make sure the chosen spot is available
+
+                            rand = Math.floor( Math.random() * 9 );
+                            if( cells[ rand ].innerHTML.trim() == '' ) break;
+                        }
+
+                        console.log( 'ill just go here..' );
+                        this.claimCell( rand );
+                    } else {
+                        // else, step 3: figure out if opponent has any winning moves to block
+
+                        let count        = null;
+                        let neededCell   = null;
+                        let decisionMade = null;
+
+                        if( opponent.cells.length >= 2 ){
+                            // blocking moves can only exist if the opponents taken at least 2 moves..
+                            console.log( 'you might have something..' );
+
+                            for( let i = 0; i < this.winCombos.length; i++ ){
+
+                                count = 0;
+
+                                opponent.cells.forEach( cell => {
+
+                                    if( this.winCombos[ i ].includes( cell ) ){
+
+                                        count++;
+                                    } else neededCell = cell; // if count gets to 2, then the third will be stored here
+                                });
+
+                                if( count == 2 ){
+                                    // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
+                                    // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
+
+                                    decisionMade = neededCell;
+                                    console.log( decisionMade );
+                                    break;
+                                }
+                            }
+                        }
+
+                        if( decisionMade ) {
+                            // blocking move found.. take it
+
+                            console.log( 'YOU CANT BLOCK ME' );
+                            setTimeout( this.claimCell( neededCell ), 500 );
+                        } else {
+                            // if opponent has no winning moves, step 4: find 'my' best next move, either a second-out-of-three or a three-out-of-three
+
+                            for( let i = 0; i < this.winCombos.length; i++ ){
+
+                                count          = 0;
+
+                                let candidateCount = 0;
+                                let candidateCell  = null;
+
+                                decisionMade   = null;
+
+                                currentPlayer.cells.forEach( cell => {
+
+                                    if( this.winCombos[ i ].includes( cell ) ){
+
+                                        count++;
+                                    } else candidateCell = cell; // if count gets above 1, then at least move towards completing this one..
+                                });
+
+                                if( count == 2 ){
+                                    // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
+
+                                    
+                                    break;
+                                } 
+                            }
+                        }
+                    }
+                    */
+                }
+            }
+        },
+        computed: {
+
+            currentPlayer(){
+
+            },
+            winningCell(){
+
+                // this.winCombos.forEach( cell => {
+
+                //     count = 0;
+
+                //     this.currentPlayer.cells.forEach( cell => {
+
+                //         if( this.winCombos[ i ].includes( cell ) ){
+
+                //             count++;
+                //         } else neededCell = cell; // if count gets to 2, then the third will be stored here
+                //     });
+
+                //     if( count == 2 ){
+                //         // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
+                //         // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
+
+                //         decisionMade = neededCell;
+                //         console.log( decisionMade );
+                //         break;
+                //     }
+                // });
+            },
+            nextBestCell(){
+
+
             }
         },
         mounted(){
@@ -194,6 +358,16 @@
 
         text-align: center;
         vertical-align: middle;
+    }
+
+    .winner-winner {
+
+        background-color: rgba(3, 3, 150, 0.521);
+    }
+
+    .tied-up {
+
+        background-color: rgba(148, 5, 5, 0.596);
     }
 
     table {
