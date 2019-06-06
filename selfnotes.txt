@@ -30,3 +30,4 @@ steps:
 - initialize
 - add auth
 - cleanup views and structure
+- get database working

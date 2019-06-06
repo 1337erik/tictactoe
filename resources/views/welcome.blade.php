@@ -2,5 +2,7 @@
 
 @section('content')
 
-    <h1>Testing</h1>
+    <h1>Tic-Tac-Toe Code Challenge</h1>
+
+    <tic-tac-toe></tic-tac-toe>
 @endsection
