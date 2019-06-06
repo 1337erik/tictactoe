@@ -9,6 +9,13 @@ class GameController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * 
+     * 
+     * used for the main game board to show..
+     * Relevant details:
+     *  - vs AI?
+     *  - is player signed in?
+     *  - which game? ( for now, tic-tac-toe is the only one allowed )
      *
      * @return \Illuminate\Http\Response
      */
