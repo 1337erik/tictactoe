@@ -1862,6 +1862,27 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/babel-loader/lib/index.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/PlayersBar.vue?vue&type=script&lang=js&":
+/*!*********************************************************************************************************************************************************************!*\
+  !*** ./node_modules/babel-loader/lib??ref--4-0!./node_modules/vue-loader/lib??vue-loader-options!./resources/js/components/PlayersBar.vue?vue&type=script&lang=js& ***!
+  \*********************************************************************************************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+//
+//
+//
+//
+//
+//
+//
+//
+/* harmony default export */ __webpack_exports__["default"] = ({});
+
+/***/ }),
+
 /***/ "./node_modules/babel-loader/lib/index.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/TicTacToe.vue?vue&type=script&lang=js&":
 /*!********************************************************************************************************************************************************************!*\
   !*** ./node_modules/babel-loader/lib??ref--4-0!./node_modules/vue-loader/lib??vue-loader-options!./resources/js/components/TicTacToe.vue?vue&type=script&lang=js& ***!
@@ -1912,233 +1933,239 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
-//
-//
-//
 /* harmony default export */ __webpack_exports__["default"] = ({
+  props: ['playback', 'game'],
   data: function data() {
     return {
-      gameOver: false,
-      playersTurn: 0,
-      totalMoves: 0,
+      boardColumns: 3,
+      // board dimensions can be served by the server, which can store board sizes in the DB based on what game it is: chess, tictactoe, tictactoe Royale, etc..
+      boardRows: 3,
+      gameStates: [],
       players: [{
         id: 0,
         type: 'human',
-        marker: 'X',
-        cells: []
+        marker: 'x'
       }, {
         id: 1,
         type: 'computer',
-        marker: 'O',
-        cells: []
+        marker: 'o'
       }],
-      winCombos: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [6, 4, 2]]
+      boardCombinations: []
     };
   },
   methods: {
-    isTurn: function isTurn(id) {
-      return id == this.playersTurn ? 'yes-turn' : '';
-    },
-    freshGame: function freshGame() {
-      this.gameOver = false;
-      this.playersTurn = 0;
-      this.totalMoves = 0;
-      this.players.forEach(function (player) {
-        return player.cells = [];
-      });
-      var cells = document.querySelectorAll('.cell').forEach(function (cell) {
-        cell.innerHTML = '';
-        cell.classList.remove('winner-winner');
-        cell.classList.remove('tied-up');
-      });
-    },
     claimCell: function claimCell(id) {
-      var _this = this;
+      var cell = document.getElementById(id); // console.log( 'claiming cellID ' + id + ': ', cell, 'with current value: ', cell.innerHTML.trim() );
 
-      var cell = document.getElementById(id);
-
-      if (!this.gameOver && cell.innerHTML.trim() == '') {
+      if (!this.winningMetaData.winningCombination && cell.innerHTML.trim() == '') {
         // only if a games still on and clicking a blank cell..
-        var player = this.players.find(function (player) {
-          return player.id == _this.playersTurn;
-        });
-        cell.innerHTML = player.marker; // apply the appropriate marker
+        // apply the appropriate marker to the specific cell
+        document.getElementById(id).innerHTML = this.currentPlayer.marker.toUpperCase(); // read the board and push state
 
-        player.cells.push(id);
-        var win = this.checkGameOver(player); // check if game is over,
+        this.gameStates.push(this.readStateFromCells()); // update board combinations
 
-        if (win) this.declareWinner(player); // and congratulate the winner..
-        else {
-            if (++this.totalMoves == 9) this.declareWinner(); // call cats-game if neccessary,
-            else {
-                this.playersTurn = (this.playersTurn + 1) % 2; // or switch players
-                // and check if new player is if AI controlled to prompt 'it' to move..
-
-                this.makeZuckerbergProud();
-              }
-          }
-      }
-    },
-    checkGameOver: function checkGameOver(currentPlayer) {
-      var _this2 = this;
-
-      var count; // initialize values
-
-      if (currentPlayer.cells.length >= 3) {
-        var _loop = function _loop(i) {
-          // not using forEach because you cant 'break' out of forEach
-          count = 0; // how many cells line up in this combo
-
-          currentPlayer.cells.forEach(function (cell) {
-            if (_this2.winCombos[i].includes(cell)) count++;
-          });
-
-          if (count == 3) {
-            _this2.gameOver = true;
-
-            _this2.winCombos[i].forEach(function (cellId) {
-              return document.getElementById(cellId).classList.add('winner-winner');
-            });
-
-            return "break";
-          }
-        };
-
-        // can only be over if the current player has at least 3 cells..
-        for (var i = 0; i < this.winCombos.length; i++) {
-          var _ret = _loop(i);
-
-          if (_ret === "break") break;
-        }
-      }
-
-      return this.gameOver; // defaults to false
-    },
-    declareWinner: function declareWinner() {
-      var player = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      if (player) console.log('Player ' + player.id + ' has sent it!');else {
-        console.log('CATS GAME');
-        document.querySelectorAll('.cell').forEach(function (cell) {
-          return cell.classList.add('tied-up');
-        });
+        this.checkBoardCombinations();
+        this.makeZuckerbergProud(); // and check if new player is if AI controlled to prompt 'it' to move..
       }
     },
     makeZuckerbergProud: function makeZuckerbergProud() {
-      var _this3 = this;
-
       // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
-      var currentPlayer = this.players.find(function (player) {
-        return player.id == _this3.playersTurn;
-      });
-      var opponent = this.players.find(function (player) {
-        return player.id != _this3.playersTurn;
-      });
+      if (!this.catsGame && this.currentPlayer.type == 'computer') {
+        var myMarker = this.currentPlayer.marker.toLowerCase();
+        var opponentMarker = this.opponent.marker.toLowerCase(); // initialize a set of groups with varying values to move within
 
-      if (currentPlayer.type == 'computer') {
-        // master algorithm..
-        // step 1: seem to be alive..
-        console.log('Zuckerberg: hmm..');
-        var rand;
-        var cells = document.querySelectorAll('.cell');
+        var mixedCombinations = [];
+        var emptyCombinations = [];
+        var partialCombinations = [];
+        var madeDecision = false; // master algorithm..
+        // Step 1: seem to be alive..
 
-        for (var k = 0; k < cells.length; k++) {
-          // just make sure the chosen spot is available
-          console.log('checking k: ' + k);
-          rand = Math.floor(Math.random() * 9);
+        console.log('Zuckerberg: hmm..'); // Step 2: Analyze the board combinations ( varies per game, will have to swap out when newer games are added )
 
-          if (cells[rand].innerHTML.trim() == '') {
-            console.log('ill just go here: ' + rand);
-            this.claimCell(rand);
+        for (var i = 0; i < this.boardCombinations.length; i++) {
+          // console.log( 'this combination: ', this.boardCombinations[ i ] );
+          if (this.boardCombinations[i][myMarker].length == 2 && this.boardCombinations[i].emptyCells.length == 1) {
+            // take the first winning move you can find
+            console.log('Zuckerberg: YOU CANT BLOCK ME');
+            madeDecision = true;
+            this.claimCell(this.boardCombinations[i].emptyCells[0]);
             break;
           }
-        } // step 2: if its the first move AI is taking, just pick anything
 
-        /*
-        if( currentPlayer.cells.length == 0 ){
-             let rand;
-            let cells = document.querySelectorAll( '.cell' );
-            for( let k = 0; k < cells.length; k++ ){
-                // just make sure the chosen spot is available
-                 rand = Math.floor( Math.random() * 9 );
-                if( cells[ rand ].innerHTML.trim() == '' ) break;
-            }
-             console.log( 'ill just go here..' );
-            this.claimCell( rand );
-        } else {
-            // else, step 3: figure out if opponent has any winning moves to block
-             let count        = null;
-            let neededCell   = null;
-            let decisionMade = null;
-             if( opponent.cells.length >= 2 ){
-                // blocking moves can only exist if the opponents taken at least 2 moves..
-                console.log( 'you might have something..' );
-                 for( let i = 0; i < this.winCombos.length; i++ ){
-                     count = 0;
-                     opponent.cells.forEach( cell => {
-                         if( this.winCombos[ i ].includes( cell ) ){
-                             count++;
-                        } else neededCell = cell; // if count gets to 2, then the third will be stored here
-                    });
-                     if( count == 2 ){
-                        // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
-                        // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
-                         decisionMade = neededCell;
-                        console.log( decisionMade );
-                        break;
-                    }
-                }
-            }
-             if( decisionMade ) {
-                // blocking move found.. take it
-                 console.log( 'YOU CANT BLOCK ME' );
-                setTimeout( this.claimCell( neededCell ), 500 );
-            } else {
-                // if opponent has no winning moves, step 4: find 'my' best next move, either a second-out-of-three or a three-out-of-three
-                 for( let i = 0; i < this.winCombos.length; i++ ){
-                     count          = 0;
-                     let candidateCount = 0;
-                    let candidateCell  = null;
-                     decisionMade   = null;
-                     currentPlayer.cells.forEach( cell => {
-                         if( this.winCombos[ i ].includes( cell ) ){
-                             count++;
-                        } else candidateCell = cell; // if count gets above 1, then at least move towards completing this one..
-                    });
-                     if( count == 2 ){
-                        // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
-                         
-                        break;
-                    } 
-                }
-            }
+          if (this.boardCombinations[i][opponentMarker].length == 2 && this.boardCombinations[i].emptyCells.length == 1) {
+            // block the first winning move the opponent has
+            console.log('Zuckerberg: nice try!');
+            madeDecision = true;
+            this.claimCell(this.boardCombinations[i].emptyCells[0]);
+            break;
+          }
+
+          if (this.boardCombinations[i][myMarker].length > 0 && this.boardCombinations[i].emptyCells.length > 0) partialCombinations.push(this.boardCombinations[i].emptyCells);
+          if (this.boardCombinations[i].emptyCells.length == 3) emptyCombinations.push(this.boardCombinations[i].emptyCells);
         }
-        */
 
+        if (!madeDecision) {
+          // console.log( 'partial Combinations: ', partialCombinations );
+          // console.log( 'empty Combinations: ', emptyCombinations );
+          if (partialCombinations.length > 0) {
+            console.log('Zuckerberg: my win is inevitable..');
+            this.claimCell(partialCombinations[0][0]);
+          } else {
+            console.log('Zuckerberg: i\'ll just go here..');
+            this.claimCell(emptyCombinations[0][0]);
+          }
+        }
       }
+    },
+    revertMove: function revertMove() {
+      // pop the latest state off of gameStates
+      this.gameStates.pop(); // take the latest state
+
+      var latestState = this.gameStates[this.gameStates.length - 1]; // sync with the server TODO
+      // if status successful, load it to the board
+
+      this.loadStateIntoCells(latestState); // update board combinations
+
+      this.checkBoardCombinations();
+    },
+    loadStateIntoCells: function loadStateIntoCells() {
+      var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      // console.log( 'loading state: ', state );
+      if ([null, ''].includes(state)) document.querySelectorAll('.cell').forEach(function (cell) {
+        return cell.innerHTML = '';
+      }); // clear a fresh board
+      else {
+          state.split('').forEach(function (value, index) {
+            document.getElementById(index + 1).innerHTML = value == '.' ? '' : value.toUpperCase();
+          });
+        }
+    },
+    readStateFromCells: function readStateFromCells() {
+      var state = [];
+      document.querySelectorAll('.cell').forEach(function (cell, index) {
+        state.push(cell.innerHTML == '' ? '.' : cell.innerHTML.toLowerCase()); // else return the full board state;
+      }); // console.log( 'reading board state: ', state.join( '' ) );
+
+      return state.join('');
+    },
+    checkBoardCombinations: function checkBoardCombinations() {
+      var combinations = [// i should also derive this from the game type and the board dimensions..
+      [1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]];
+      var withMetaData = [];
+      combinations.forEach(function (combo, index) {
+        // mark each combo as:
+        // occupied by 3 same
+        // occupied by 2 same w/ 1 blank
+        // occupied by 1 w/ 2 blank
+        // occupied by mixed set
+        var x = [];
+        var o = [];
+        var emptyCells = [];
+        combo.forEach(function (cell) {
+          var value = document.getElementById(cell).innerHTML.toLowerCase();
+
+          switch (value) {
+            case 'x':
+              x.push(cell);
+              break;
+
+            case 'o':
+              o.push(cell);
+              break;
+
+            case '':
+            default:
+              emptyCells.push(cell);
+              break;
+          }
+        });
+        withMetaData.push({
+          x: x,
+          o: o,
+          emptyCells: emptyCells
+        });
+      });
+      this.boardCombinations = withMetaData;
+    },
+    cellClasses: function cellClasses(id) {
+      var base = ['cell'];
+      if (this.winningMetaData.winningCombination != null && this.winningMetaData.winningCombination.includes(id)) base.push('winner-winner');
+      if (this.catsGame) base.push('tied-up');
+      return base.join(' ');
     }
   },
   computed: {
-    currentPlayer: function currentPlayer() {},
-    winningCell: function winningCell() {// this.winCombos.forEach( cell => {
-      //     count = 0;
-      //     this.currentPlayer.cells.forEach( cell => {
-      //         if( this.winCombos[ i ].includes( cell ) ){
-      //             count++;
-      //         } else neededCell = cell; // if count gets to 2, then the third will be stored here
-      //     });
-      //     if( count == 2 ){
-      //         // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
-      //         // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
-      //         decisionMade = neededCell;
-      //         console.log( decisionMade );
-      //         break;
-      //     }
-      // });
+    currentPlayer: function currentPlayer() {
+      // current player can be derived from the total amount of moves that have been made & total amount of players
+      return this.players[(this.totalMoves + this.players.length) % this.players.length];
     },
-    nextBestCell: function nextBestCell() {}
+    opponent: function opponent() {
+      return this.players[(this.totalMoves + this.players.length + 1) % this.players.length];
+    },
+    totalMoves: function totalMoves() {
+      return this.gameStates.length - 1;
+    },
+    playerCells: function playerCells() {
+      var _this = this;
+
+      // grab all indexes of the board where the player's marker is found
+      var cells = [];
+      document.querySelectorAll('.cell').forEach(function (cell, index) {
+        if (cell.innerHTML.toLowerCase() == _this.currentPlayer.marker.toLowerCase()) cells.push(index + 1);
+      }); // console.log( 'player has cells: ', cells.join() );
+
+      return cells.join();
+    },
+    catsGame: function catsGame() {
+      if (this.totalMoves == 9 && this.winningMetaData.winningCombination == null) {
+        console.log('Zuckerberg: you get away this time..');
+        console.log('-- CATS GAME --');
+        return true;
+      } else return false;
+    },
+    againstAI: function againstAI() {
+      return this.players.find(function (player) {
+        return player.type == 'computer';
+      });
+    },
+    winningMetaData: function winningMetaData() {
+      var _this2 = this;
+
+      var gameData = {
+        winningPlayer: null,
+        winningCombination: null
+      };
+      this.boardCombinations.forEach(function (combo) {
+        if (combo.emptyCells.length == 0 && combo.x.length == 3) {
+          gameData.winningPlayer = _this2.players.find(function (player) {
+            return player.marker.toLowerCase() == 'x';
+          });
+          gameData.winningCombination = combo.x;
+          console.log('-- GAME OVER --', 'player ' + gameData.winningPlayer.id + ' has won!');
+          if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
+          if (gameData.winningPlayer.type == 'human') console.log('Zuckerberg: WHAT?! I must become stronger..');
+        } else if (combo.emptyCells.length == 0 && combo.o.length == 3) {
+          gameData.winningPlayer = _this2.players.find(function (player) {
+            return player.marker.toLowerCase() == 'o';
+          });
+          gameData.winningCombination = combo.o;
+          console.log('-- GAME OVER --', gameData.winningPlayer.id + ' has won!');
+          if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
+          if (gameData.winningPlayer.type == 'human') console.log('Zuckerberg: WHAT?! I must become stronger..');
+        }
+      });
+      return gameData;
+    }
   },
   mounted: function mounted() {
-    this.freshGame();
+    // initialize game state by stripping all irrelevant meta data from server's playback
+    var gameStates = [];
+    this.playback.forEach(function (state) {
+      return gameStates.push(state.details);
+    });
+    this.gameStates = gameStates; // initialize the board using the latest playback state..
+
+    this.loadStateIntoCells(gameStates[this.totalMoves]);
   }
 });
 
@@ -6601,7 +6628,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.player-outer-wrapper[data-v-c3a085b2] {\n\n    display: flex;\n    justify-content: space-between;\n    width: 100%;\n}\n.player-inner-wrapper[data-v-c3a085b2] {\n\n    text-align: center;\n    flex: 1;\n}\n.yes-turn[data-v-c3a085b2] {\n\n    font-weight: bold;\n    color: blue;\n}\n.outer-wrap[data-v-c3a085b2] {\n\n    margin-top: 65px;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n}\n.cell[data-v-c3a085b2] {\n\n    border: 2px solid #333;\n    height: 100px;\n    width: 100px;\n    font-size: 45px;\n    cursor: pointer;\n\n\n    text-align: center;\n    vertical-align: middle;\n}\n.winner-winner[data-v-c3a085b2] {\n\n    background-color: rgba(3, 3, 150, 0.521);\n}\n.tied-up[data-v-c3a085b2] {\n\n    background-color: rgba(148, 5, 5, 0.596);\n}\ntable[data-v-c3a085b2] {\n\n    margin-top: 35px;\n    border-collapse: collapse;\n    width: 100%;\n    max-width: 300px;\n}\ntable tr:first-child td[data-v-c3a085b2] {\n\n    border-top: 0;\n}\ntable tr:last-child td[data-v-c3a085b2] {\n\n    border-bottom: 0;\n}\ntable tr td[data-v-c3a085b2]:first-child {\n\n    border-left: 0;\n}\ntable tr td[data-v-c3a085b2]:last-child {\n\n    border-right: 0;\n}\n", ""]);
+exports.push([module.i, "\n.player-outer-wrapper[data-v-c3a085b2] {\n\n    display: flex;\n    justify-content: space-between;\n    width: 100%;\n}\n.player-inner-wrapper[data-v-c3a085b2] {\n\n    text-align: center;\n    flex: 1;\n}\n.yes-turn[data-v-c3a085b2] {\n\n    font-weight: bold;\n    color: blue;\n}\n.outer-wrap[data-v-c3a085b2] {\n\n    margin-top: 65px;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n}\n.cell[data-v-c3a085b2] {\n\n    border: 2px solid #333;\n    height: 100px;\n    width: 100px;\n    font-size: 45px;\n    cursor: pointer;\n\n\n    text-align: center;\n    vertical-align: middle;\n}\n.winner-winner[data-v-c3a085b2] {\n\n    background-color: rgba(3, 3, 150, 0.521);\n}\n.tied-up[data-v-c3a085b2] {\n\n    background-color: rgba(148, 5, 5, 0.596);\n}\ntable[data-v-c3a085b2] {\n\n    margin-top: 35px;\n    border-collapse: collapse;\n    width: 100%;\n    max-width: 300px;\n}\ntable tr:first-child td[data-v-c3a085b2] {\n\n    border-top: 0;\n}\ntable tr:last-child td[data-v-c3a085b2] {\n\n    border-bottom: 0;\n}\ntable tr td[data-v-c3a085b2]:first-child {\n\n    border-left: 0;\n}\ntable tr td[data-v-c3a085b2]:last-child {\n\n    border-right: 0;\n}\n.action-bar-outer-wrapper[data-v-c3a085b2] {\n\n    margin-top: 40px;\n}\n\n\n\n\n/***************************************** playback section */\n.playback-bar-outer-wrapper[data-v-c3a085b2] {\n\n    margin-top: 48px;\n    width: 100%;\n    text-align: center;\n}\n.playback-card[data-v-c3a085b2] {\n\n    background-color: white;\n    border-radius: 8px;\n    padding: 15px;\n    box-shadow: 0px 2px 5px 0px #ccc;\n    display: inline-block;\n    margin: 10px;\n    width: 100px;\n    height: 100px;\n}\n.revert-card[data-v-c3a085b2] {\n\n    cursor: pointer;\n}\n", ""]);
 
 // exports
 
@@ -38110,6 +38137,39 @@ render._withStripped = true
 
 /***/ }),
 
+/***/ "./node_modules/vue-loader/lib/loaders/templateLoader.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true&":
+/*!*************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib??vue-loader-options!./resources/js/components/PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true& ***!
+  \*************************************************************************************************************************************************************************************************************************/
+/*! exports provided: render, staticRenderFns */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "render", function() { return render; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return staticRenderFns; });
+var render = function() {
+  var _vm = this
+  var _h = _vm.$createElement
+  var _c = _vm._self._c || _h
+  return _vm._m(0)
+}
+var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("div", { staticClass: "player-bar-outer-wrapper" }, [
+      _c("h1", [_vm._v("testing players")])
+    ])
+  }
+]
+render._withStripped = true
+
+
+
+/***/ }),
+
 /***/ "./node_modules/vue-loader/lib/loaders/templateLoader.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/TicTacToe.vue?vue&type=template&id=c3a085b2&scoped=true&":
 /*!************************************************************************************************************************************************************************************************************************!*\
   !*** ./node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!./node_modules/vue-loader/lib??vue-loader-options!./resources/js/components/TicTacToe.vue?vue&type=template&id=c3a085b2&scoped=true& ***!
@@ -38134,130 +38194,84 @@ var render = function() {
           "div",
           { key: player.id, staticClass: "player-inner-wrapper" },
           [
-            _c("h3", { class: _vm.isTurn(player.id) }, [
-              _vm._v("Player: " + _vm._s(player.id))
-            ]),
+            _c(
+              "h3",
+              { style: _vm.currentPlayer.id == player.id ? "color: blue" : "" },
+              [_vm._v("Player: " + _vm._s(player.id))]
+            ),
             _vm._v(" "),
             _c("h5", [_vm._v(_vm._s(player.type))]),
             _vm._v(" "),
-            _c("h5", [_vm._v("Marker: " + _vm._s(player.marker))])
+            _c("h5", [_vm._v("Marker: " + _vm._s(player.marker.toUpperCase()))])
           ]
         )
       }),
       0
     ),
     _vm._v(" "),
-    _c("table", [
-      _c("tr", [
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "0" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(0)
-            }
-          }
-        }),
-        _vm._v(" "),
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "1" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(1)
-            }
-          }
-        }),
-        _vm._v(" "),
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "2" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(2)
-            }
-          }
-        })
-      ]),
-      _vm._v(" "),
-      _c("tr", [
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "3" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(3)
-            }
-          }
-        }),
-        _vm._v(" "),
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "4" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(4)
-            }
-          }
-        }),
-        _vm._v(" "),
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "5" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(5)
-            }
-          }
-        })
-      ]),
-      _vm._v(" "),
-      _c("tr", [
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "6" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(6)
-            }
-          }
-        }),
-        _vm._v(" "),
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "7" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(7)
-            }
-          }
-        }),
-        _vm._v(" "),
-        _c("td", {
-          staticClass: "cell",
-          attrs: { id: "8" },
-          on: {
-            click: function($event) {
-              return _vm.claimCell(8)
-            }
-          }
-        })
-      ])
-    ]),
+    _c(
+      "table",
+      _vm._l(_vm.boardRows, function(j) {
+        return _c(
+          "tr",
+          { key: j },
+          _vm._l(_vm.boardColumns, function(k) {
+            return _c("td", {
+              key: k,
+              class: _vm.cellClasses((j - 1) * _vm.boardColumns + k),
+              attrs: { id: (j - 1) * _vm.boardColumns + k },
+              on: {
+                click: function($event) {
+                  _vm.claimCell((j - 1) * _vm.boardColumns + k)
+                }
+              }
+            })
+          }),
+          0
+        )
+      }),
+      0
+    ),
     _vm._v(" "),
-    _c("div", { staticClass: "endgame my-4" }, [
-      _c("div", { staticClass: "text" }),
+    _c("div", { staticClass: "playback-bar-outer-wrapper" }, [
+      _c("h1", [_vm._v("Game Playback")]),
+      _vm._v(" "),
+      _vm.winningMetaData.winningCombination || _vm.catsGame
+        ? _c("h3", [
+            _c("a", { attrs: { href: "/games" } }, [_vm._v("New Game")])
+          ])
+        : _vm._e(),
       _vm._v(" "),
       _c(
-        "button",
-        {
-          on: {
-            click: function($event) {
-              return _vm.freshGame()
-            }
-          }
-        },
-        [_vm._v("Clear Board")]
+        "div",
+        { staticClass: "playback-bar-inner-wrap" },
+        [
+          _vm._l(_vm.gameStates, function(state, index) {
+            return _c("div", { key: index, staticClass: "playback-card" }, [
+              _vm._v(
+                "\n\n                " +
+                  _vm._s(index == 0 ? "Initial State" : "Move " + index) +
+                  "\n            "
+              )
+            ])
+          }),
+          _vm._v(" "),
+          _vm.gameStates.length > 1
+            ? _c(
+                "div",
+                {
+                  staticClass: "playback-card revert-card",
+                  on: {
+                    click: function($event) {
+                      return _vm.revertMove()
+                    }
+                  }
+                },
+                [_vm._v("\n\n                Revert Move\n            ")]
+              )
+            : _vm._e()
+        ],
+        2
       )
     ])
   ])
@@ -50414,6 +50428,7 @@ module.exports = function(module) {
 
 var map = {
 	"./components/ExampleComponent.vue": "./resources/js/components/ExampleComponent.vue",
+	"./components/PlayersBar.vue": "./resources/js/components/PlayersBar.vue",
 	"./components/TicTacToe.vue": "./resources/js/components/TicTacToe.vue"
 };
 
@@ -50602,6 +50617,75 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "render", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_ExampleComponent_vue_vue_type_template_id_299e239e___WEBPACK_IMPORTED_MODULE_0__["render"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_ExampleComponent_vue_vue_type_template_id_299e239e___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"]; });
+
+
+
+/***/ }),
+
+/***/ "./resources/js/components/PlayersBar.vue":
+/*!************************************************!*\
+  !*** ./resources/js/components/PlayersBar.vue ***!
+  \************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _PlayersBar_vue_vue_type_template_id_b17a5da8_scoped_true___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true& */ "./resources/js/components/PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true&");
+/* harmony import */ var _PlayersBar_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./PlayersBar.vue?vue&type=script&lang=js& */ "./resources/js/components/PlayersBar.vue?vue&type=script&lang=js&");
+/* empty/unused harmony star reexport *//* harmony import */ var _node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../../node_modules/vue-loader/lib/runtime/componentNormalizer.js */ "./node_modules/vue-loader/lib/runtime/componentNormalizer.js");
+
+
+
+
+
+/* normalize component */
+
+var component = Object(_node_modules_vue_loader_lib_runtime_componentNormalizer_js__WEBPACK_IMPORTED_MODULE_2__["default"])(
+  _PlayersBar_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_1__["default"],
+  _PlayersBar_vue_vue_type_template_id_b17a5da8_scoped_true___WEBPACK_IMPORTED_MODULE_0__["render"],
+  _PlayersBar_vue_vue_type_template_id_b17a5da8_scoped_true___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"],
+  false,
+  null,
+  "b17a5da8",
+  null
+  
+)
+
+/* hot reload */
+if (false) { var api; }
+component.options.__file = "resources/js/components/PlayersBar.vue"
+/* harmony default export */ __webpack_exports__["default"] = (component.exports);
+
+/***/ }),
+
+/***/ "./resources/js/components/PlayersBar.vue?vue&type=script&lang=js&":
+/*!*************************************************************************!*\
+  !*** ./resources/js/components/PlayersBar.vue?vue&type=script&lang=js& ***!
+  \*************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_babel_loader_lib_index_js_ref_4_0_node_modules_vue_loader_lib_index_js_vue_loader_options_PlayersBar_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/babel-loader/lib??ref--4-0!../../../node_modules/vue-loader/lib??vue-loader-options!./PlayersBar.vue?vue&type=script&lang=js& */ "./node_modules/babel-loader/lib/index.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/PlayersBar.vue?vue&type=script&lang=js&");
+/* empty/unused harmony star reexport */ /* harmony default export */ __webpack_exports__["default"] = (_node_modules_babel_loader_lib_index_js_ref_4_0_node_modules_vue_loader_lib_index_js_vue_loader_options_PlayersBar_vue_vue_type_script_lang_js___WEBPACK_IMPORTED_MODULE_0__["default"]); 
+
+/***/ }),
+
+/***/ "./resources/js/components/PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true&":
+/*!*******************************************************************************************!*\
+  !*** ./resources/js/components/PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true& ***!
+  \*******************************************************************************************/
+/*! exports provided: render, staticRenderFns */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_PlayersBar_vue_vue_type_template_id_b17a5da8_scoped_true___WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../../node_modules/vue-loader/lib/loaders/templateLoader.js??vue-loader-options!../../../node_modules/vue-loader/lib??vue-loader-options!./PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true& */ "./node_modules/vue-loader/lib/loaders/templateLoader.js?!./node_modules/vue-loader/lib/index.js?!./resources/js/components/PlayersBar.vue?vue&type=template&id=b17a5da8&scoped=true&");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "render", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_PlayersBar_vue_vue_type_template_id_b17a5da8_scoped_true___WEBPACK_IMPORTED_MODULE_0__["render"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "staticRenderFns", function() { return _node_modules_vue_loader_lib_loaders_templateLoader_js_vue_loader_options_node_modules_vue_loader_lib_index_js_vue_loader_options_PlayersBar_vue_vue_type_template_id_b17a5da8_scoped_true___WEBPACK_IMPORTED_MODULE_0__["staticRenderFns"]; });
 
 
 

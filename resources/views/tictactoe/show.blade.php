@@ -2,5 +2,8 @@
 
 @section('content')
 
-    <tic-tac-toe></tic-tac-toe>
+    <tic-tac-toe
+        :playback="{{ $game->states }}"
+        :game="{{ $game }}"
+    ></tic-tac-toe>
 @endsection

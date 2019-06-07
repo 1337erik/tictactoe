@@ -6,38 +6,35 @@
 
             <div v-for=" player in players " :key=" player.id " class="player-inner-wrapper">
 
-                <h3 :class=" isTurn( player.id ) ">Player: {{ player.id }}</h3>
+                <h3 :style=" currentPlayer.id == player.id ? 'color: blue' : '' ">Player: {{ player.id }}</h3>
                 <h5>{{ player.type }}</h5>
-                <h5>Marker: {{ player.marker }}</h5>
+                <h5>Marker: {{ player.marker.toUpperCase() }}</h5>
             </div>
         </div>
+
         <table>
 
-            <tr>
+            <tr v-for=" j in boardRows" :key=" j ">
 
-                <td class="cell" id="0" @click=" claimCell( 0 ) "></td>
-                <td class="cell" id="1" @click=" claimCell( 1 ) "></td>
-                <td class="cell" id="2" @click=" claimCell( 2 ) "></td>
-            </tr>
-            <tr>
-
-                <td class="cell" id="3" @click=" claimCell( 3 ) "></td>
-                <td class="cell" id="4" @click=" claimCell( 4 ) "></td>
-                <td class="cell" id="5" @click=" claimCell( 5 ) "></td>
-            </tr>
-            <tr>
-
-                <td class="cell" id="6" @click=" claimCell( 6 ) "></td>
-                <td class="cell" id="7" @click=" claimCell( 7 ) "></td>
-                <td class="cell" id="8" @click=" claimCell( 8 ) "></td>
+                <td v-for=" k in boardColumns " :class=" cellClasses( ( ( j - 1 ) * boardColumns ) + k ) " :id=" ( ( j - 1 ) * boardColumns ) + k " @click=" claimCell( ( ( j - 1 ) * boardColumns ) + k ) " :key=" k "></td>
             </tr>
         </table>
 
-        <div class="endgame my-4">
+        <div class="playback-bar-outer-wrapper">
 
-            <div class="text"></div>
+            <h1>Game Playback</h1>
+            <h3 v-if=" winningMetaData.winningCombination || catsGame "><a href="/games">New Game</a></h3>
+            <div class="playback-bar-inner-wrap">
 
-            <button @click=" freshGame() ">Clear Board</button>
+                <div class="playback-card" v-for=" ( state, index ) in gameStates " :key=" index ">
+
+                    {{ index == 0 ? 'Initial State' : 'Move ' + index }}
+                </div>
+                <div class="playback-card revert-card" @click=" revertMove() " v-if=" gameStates.length > 1 ">
+
+                    Revert Move
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -46,274 +43,315 @@
 
     export default {
 
+        props: [
+
+            'playback',
+            'game'
+        ],
         data: () => {
 
             return {
 
-                gameOver    : false,
-                playersTurn : 0,
-                totalMoves  : 0,
-                players     : [
+                boardColumns      : 3, // board dimensions can be served by the server, which can store board sizes in the DB based on what game it is: chess, tictactoe, tictactoe Royale, etc..
+                boardRows         : 3,
+                gameStates        : [],
+                players           : [
 
                     {
                         id     : 0,
                         type   : 'human',
-                        marker : 'X',
-                        cells  : []
+                        marker : 'x'
                     },
                     {
                         id     : 1,
                         type   : 'computer',
-                        marker : 'O',
-                        cells  : []
+                        marker : 'o'
                     }
                 ],
-                winCombos : [
-
-                    [ 0, 1, 2 ],
-                    [ 3, 4, 5 ],
-                    [ 6, 7, 8 ],
-                    [ 0, 3, 6 ],
-                    [ 1, 4, 7 ],
-                    [ 2, 5, 8 ],
-                    [ 0, 4, 8 ],
-                    [ 6, 4, 2 ]
-                ]
+                boardCombinations : []
             }
         },
         methods: {
 
-            isTurn( id ){
-
-                return id == this.playersTurn ? 'yes-turn' : '';
-            },
-            freshGame(){
-
-                this.gameOver    = false;
-                this.playersTurn = 0;
-                this.totalMoves  = 0;
-                this.players.forEach( player => player.cells = [] );
-
-                let cells = document.querySelectorAll( '.cell' ).forEach( cell => {
-
-                    cell.innerHTML = '';
-                    cell.classList.remove( 'winner-winner' );
-                    cell.classList.remove( 'tied-up' );
-                });
-            },
             claimCell( id ){
 
                 let cell = document.getElementById( id );
+                // console.log( 'claiming cellID ' + id + ': ', cell, 'with current value: ', cell.innerHTML.trim() );
 
-                if( !this.gameOver && cell.innerHTML.trim() == '' ){
+                if( !this.winningMetaData.winningCombination && cell.innerHTML.trim() == '' ){
                     // only if a games still on and clicking a blank cell..
 
-                    const player   = this.players.find( player => player.id == this.playersTurn );
-                    cell.innerHTML = player.marker; // apply the appropriate marker
-                    player.cells.push( id );
+                    // apply the appropriate marker to the specific cell
+                    document.getElementById( id ).innerHTML = this.currentPlayer.marker.toUpperCase();
 
-                    let win = this.checkGameOver( player ); // check if game is over,
-                    if( win ) this.declareWinner( player ); // and congratulate the winner..
-                    else {
+                    // read the board and push state
+                    this.gameStates.push( this.readStateFromCells() );
 
-                        if( ++this.totalMoves == 9 ) this.declareWinner(); // call cats-game if neccessary,
-                        else {
+                    // update board combinations
+                    this.checkBoardCombinations();
 
-                            this.playersTurn = ( this.playersTurn + 1 ) % 2; // or switch players
-
-                            // and check if new player is if AI controlled to prompt 'it' to move..
-                            this.makeZuckerbergProud();
-                        }
-                    }
+                    this.makeZuckerbergProud(); // and check if new player is if AI controlled to prompt 'it' to move..
                 }
             },
-            checkGameOver( currentPlayer ){
 
-                let count; // initialize values
 
-                if( currentPlayer.cells.length >= 3 ){
-                    // can only be over if the current player has at least 3 cells..
-
-                    for( let i = 0; i < this.winCombos.length; i++ ){
-                        // not using forEach because you cant 'break' out of forEach
-
-                        count = 0; // how many cells line up in this combo
-                        currentPlayer.cells.forEach( cell => {
-
-                            if( this.winCombos[ i ].includes( cell ) ) count++;
-                        });
-
-                        if( count == 3 ){
-
-                            this.gameOver = true
-
-                            this.winCombos[ i ].forEach( cellId => document.getElementById( cellId ).classList.add( 'winner-winner' ) );
-                            break;
-                        }
-                    }
-                }
-                return this.gameOver; // defaults to false
-            },
-            declareWinner( player = null ){
-
-                if( player ) console.log( 'Player ' + player.id + ' has sent it!' );
-                else {
-
-                    console.log( 'CATS GAME' );
-                    document.querySelectorAll( '.cell' ).forEach( cell => cell.classList.add( 'tied-up' ) );
-                }
-            },
             makeZuckerbergProud(){
                 // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
 
-                const currentPlayer = this.players.find( player => player.id == this.playersTurn );
-                const opponent      = this.players.find( player => player.id != this.playersTurn );
+                if( !this.catsGame && this.currentPlayer.type == 'computer' ){
 
-                if( currentPlayer.type == 'computer' ){
+                    const myMarker       = this.currentPlayer.marker.toLowerCase();
+                    const opponentMarker = this.opponent.marker.toLowerCase();
+
+                    // initialize a set of groups with varying values to move within
+                    const mixedCombinations   = [];
+                    const emptyCombinations   = [];
+                    const partialCombinations = [];
+
+                    let madeDecision = false;
 
                     // master algorithm..
-                    // step 1: seem to be alive..
+                    // Step 1: seem to be alive..
                     console.log( 'Zuckerberg: hmm..' );
 
-                    let rand;
-                    let cells = document.querySelectorAll( '.cell' );
-                    for( let k = 0; k < cells.length; k++ ){
-                        // just make sure the chosen spot is available
-                        console.log( 'checking k: ' + k );
+                    // Step 2: Analyze the board combinations ( varies per game, will have to swap out when newer games are added )
+                    for( let i = 0; i < this.boardCombinations.length; i++ ){
 
-                        rand = Math.floor( Math.random() * 9 );
-                        if( cells[ rand ].innerHTML.trim() == '' ){
+                        // console.log( 'this combination: ', this.boardCombinations[ i ] );
 
-                            console.log( 'ill just go here: ' + rand );
-                            this.claimCell( rand );
+                        if( this.boardCombinations[ i ][ myMarker ].length == 2 && this.boardCombinations[ i ].emptyCells.length == 1 ){
+                            // take the first winning move you can find
+
+                            console.log( 'Zuckerberg: YOU CANT BLOCK ME' );
+                            madeDecision = true;
+                            this.claimCell( this.boardCombinations[ i ].emptyCells[ 0 ] );
                             break;
                         }
+                        if( this.boardCombinations[ i ][ opponentMarker ].length == 2 && this.boardCombinations[ i ].emptyCells.length == 1 ){
+                            // block the first winning move the opponent has
+
+                            console.log( 'Zuckerberg: nice try!' );
+                            madeDecision = true;
+                            this.claimCell( this.boardCombinations[ i ].emptyCells[ 0 ] );
+                            break;
+                        }
+
+                        if( this.boardCombinations[ i ][ myMarker ].length > 0 && this.boardCombinations[ i ].emptyCells.length > 0 ) partialCombinations.push( this.boardCombinations[ i ].emptyCells );
+                        if( this.boardCombinations[ i ].emptyCells.length == 3 ) emptyCombinations.push( this.boardCombinations[ i ].emptyCells );
                     }
 
-                    // step 2: if its the first move AI is taking, just pick anything
-                    /*
-                    if( currentPlayer.cells.length == 0 ){
+                    if( !madeDecision ){
 
-                        let rand;
-                        let cells = document.querySelectorAll( '.cell' );
-                        for( let k = 0; k < cells.length; k++ ){
-                            // just make sure the chosen spot is available
+                        // console.log( 'partial Combinations: ', partialCombinations );
+                        // console.log( 'empty Combinations: ', emptyCombinations );
 
-                            rand = Math.floor( Math.random() * 9 );
-                            if( cells[ rand ].innerHTML.trim() == '' ) break;
-                        }
+                        if( partialCombinations.length > 0 ){
 
-                        console.log( 'ill just go here..' );
-                        this.claimCell( rand );
-                    } else {
-                        // else, step 3: figure out if opponent has any winning moves to block
-
-                        let count        = null;
-                        let neededCell   = null;
-                        let decisionMade = null;
-
-                        if( opponent.cells.length >= 2 ){
-                            // blocking moves can only exist if the opponents taken at least 2 moves..
-                            console.log( 'you might have something..' );
-
-                            for( let i = 0; i < this.winCombos.length; i++ ){
-
-                                count = 0;
-
-                                opponent.cells.forEach( cell => {
-
-                                    if( this.winCombos[ i ].includes( cell ) ){
-
-                                        count++;
-                                    } else neededCell = cell; // if count gets to 2, then the third will be stored here
-                                });
-
-                                if( count == 2 ){
-                                    // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
-                                    // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
-
-                                    decisionMade = neededCell;
-                                    console.log( decisionMade );
-                                    break;
-                                }
-                            }
-                        }
-
-                        if( decisionMade ) {
-                            // blocking move found.. take it
-
-                            console.log( 'YOU CANT BLOCK ME' );
-                            setTimeout( this.claimCell( neededCell ), 500 );
+                            console.log( 'Zuckerberg: my win is inevitable..' );
+                            this.claimCell( partialCombinations[ 0 ][ 0 ] );
                         } else {
-                            // if opponent has no winning moves, step 4: find 'my' best next move, either a second-out-of-three or a three-out-of-three
 
-                            for( let i = 0; i < this.winCombos.length; i++ ){
-
-                                count          = 0;
-
-                                let candidateCount = 0;
-                                let candidateCell  = null;
-
-                                decisionMade   = null;
-
-                                currentPlayer.cells.forEach( cell => {
-
-                                    if( this.winCombos[ i ].includes( cell ) ){
-
-                                        count++;
-                                    } else candidateCell = cell; // if count gets above 1, then at least move towards completing this one..
-                                });
-
-                                if( count == 2 ){
-                                    // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
-
-                                    
-                                    break;
-                                } 
-                            }
+                            console.log( 'Zuckerberg: i\'ll just go here..' );
+                            this.claimCell( emptyCombinations[ 0 ][ 0 ] );
                         }
+
                     }
-                    */
                 }
-            }
+            },
+
+
+            revertMove(){
+
+                // pop the latest state off of gameStates
+                this.gameStates.pop();
+
+                // take the latest state
+                const latestState = this.gameStates[ this.gameStates.length - 1 ];
+
+                // sync with the server TODO
+
+                // if status successful, load it to the board
+                this.loadStateIntoCells( latestState );
+
+                // update board combinations
+                this.checkBoardCombinations();
+            },
+
+
+            loadStateIntoCells( state = null ){
+
+                // console.log( 'loading state: ', state );
+                if( [ null, '' ].includes( state ) ) document.querySelectorAll( '.cell' ).forEach( cell => cell.innerHTML = '' ); // clear a fresh board
+                else {
+
+                    state.split( '' ).forEach( ( value, index ) => {
+
+                        document.getElementById( index + 1 ).innerHTML = ( value == '.' ? '' : value.toUpperCase() );
+                    });
+                }
+            },
+            readStateFromCells(){
+
+                let state = [];
+                document.querySelectorAll( '.cell' ).forEach( ( cell, index ) => {
+
+                    state.push( cell.innerHTML == '' ? '.' : cell.innerHTML.toLowerCase() ); // else return the full board state;
+                });
+
+                // console.log( 'reading board state: ', state.join( '' ) );
+                return state.join( '' );
+            },
+
+
+            checkBoardCombinations(){
+
+                const combinations = [
+                    // i should also derive this from the game type and the board dimensions..
+
+                    [ 1, 2, 3 ],
+                    [ 4, 5, 6 ],
+                    [ 7, 8, 9 ],
+                    [ 1, 4, 7 ],
+                    [ 2, 5, 8 ],
+                    [ 3, 6, 9 ],
+                    [ 1, 5, 9 ],
+                    [ 3, 5, 7 ]
+                ];
+                const withMetaData = [];
+
+                combinations.forEach( ( combo, index ) => {
+
+                    // mark each combo as:
+                    // occupied by 3 same
+                    // occupied by 2 same w/ 1 blank
+                    // occupied by 1 w/ 2 blank
+                    // occupied by mixed set
+
+                    const x = [];
+                    const o = [];
+                    const emptyCells = [];
+
+                    combo.forEach( cell => {
+
+                        const value = document.getElementById( cell ).innerHTML.toLowerCase();
+                        switch( value ){
+
+                            case 'x':
+
+                                x.push( cell );
+                                break;
+                            case 'o':
+
+                                o.push( cell )
+                                break;
+                            case '' :
+                            default :
+
+                                emptyCells.push( cell );
+                                break;
+                        }
+                    });
+
+                    withMetaData.push({
+
+                        x, o, emptyCells
+                    });
+                });
+
+                this.boardCombinations = withMetaData;
+            },
+
+            cellClasses( id ){
+
+                const base = [ 'cell' ];
+                if( this.winningMetaData.winningCombination != null && this.winningMetaData.winningCombination.includes( id ) ) base.push( 'winner-winner' );
+                if( this.catsGame ) base.push( 'tied-up' );
+
+                return base.join( ' ' );
+            },
         },
         computed: {
 
             currentPlayer(){
+                // current player can be derived from the total amount of moves that have been made & total amount of players
 
+                return this.players[ ( this.totalMoves + this.players.length ) % this.players.length ];
             },
-            winningCell(){
+            opponent(){
 
-                // this.winCombos.forEach( cell => {
-
-                //     count = 0;
-
-                //     this.currentPlayer.cells.forEach( cell => {
-
-                //         if( this.winCombos[ i ].includes( cell ) ){
-
-                //             count++;
-                //         } else neededCell = cell; // if count gets to 2, then the third will be stored here
-                //     });
-
-                //     if( count == 2 ){
-                //         // if count doesn't get to 2, both variables will simply be reset upon next iteration anyways
-                //         // so if a blocking move is found, store it and break the loop ( if 2 blocking moves exist, well gg anyways you beat the robots )
-
-                //         decisionMade = neededCell;
-                //         console.log( decisionMade );
-                //         break;
-                //     }
-                // });
+                return this.players[ ( this.totalMoves + this.players.length + 1 ) % this.players.length ]
             },
-            nextBestCell(){
+            totalMoves(){
 
+                return this.gameStates.length - 1;
+            },
 
+            playerCells(){
+                // grab all indexes of the board where the player's marker is found
+
+                let cells = [];
+                document.querySelectorAll( '.cell' ).forEach( ( cell, index ) => {
+
+                    if( cell.innerHTML.toLowerCase() == this.currentPlayer.marker.toLowerCase() ) cells.push( index + 1 );
+                });
+
+                // console.log( 'player has cells: ', cells.join() );
+                return cells.join();
+            },
+
+            catsGame(){
+
+                if( this.totalMoves == 9 && this.winningMetaData.winningCombination == null ){
+
+                    console.log( 'Zuckerberg: you get away this time..' );
+                    console.log( '-- CATS GAME --' );
+                    return true;
+                } else return false;
+            },
+
+            againstAI(){
+
+                return this.players.find( player => player.type == 'computer' );
+            },
+
+            winningMetaData(){
+
+                let gameData = {
+
+                    winningPlayer      : null,
+                    winningCombination : null
+                };
+                this.boardCombinations.forEach( combo => {
+
+                    if( combo.emptyCells.length == 0 && combo.x.length == 3 ){
+
+                        gameData.winningPlayer      = this.players.find( player => player.marker.toLowerCase() == 'x' );
+                        gameData.winningCombination = combo.x;
+                        console.log( '-- GAME OVER --', 'player ' + gameData.winningPlayer.id + ' has won!' );
+                        if( gameData.winningPlayer.type == 'computer' ) console.log( 'Zuckerberg: LOL gg noob' );
+                        if( gameData.winningPlayer.type == 'human'    ) console.log( 'Zuckerberg: WHAT?! I must become stronger..' );
+                    } else if( combo.emptyCells.length == 0 && combo.o.length == 3 ){
+
+                        gameData.winningPlayer      = this.players.find( player => player.marker.toLowerCase() == 'o' );
+                        gameData.winningCombination = combo.o;
+                        console.log( '-- GAME OVER --', gameData.winningPlayer.id + ' has won!' );
+                        if( gameData.winningPlayer.type == 'computer' ) console.log( 'Zuckerberg: LOL gg noob' );
+                        if( gameData.winningPlayer.type == 'human'    ) console.log( 'Zuckerberg: WHAT?! I must become stronger..' );
+                    }
+                });
+
+                return gameData;
             }
         },
         mounted(){
 
-            this.freshGame();
+            // initialize game state by stripping all irrelevant meta data from server's playback
+            const gameStates = [];
+            this.playback.forEach( state => gameStates.push( state.details ) );
+            this.gameStates = gameStates;
+
+            // initialize the board using the latest playback state..
+            this.loadStateIntoCells( gameStates[ this.totalMoves ] );
         }
     }
 </script>
@@ -396,5 +434,38 @@
     table tr td:last-child {
 
         border-right: 0;
+    }
+
+    .action-bar-outer-wrapper {
+
+        margin-top: 40px;
+    }
+
+
+
+
+    /***************************************** playback section */
+    .playback-bar-outer-wrapper {
+
+        margin-top: 48px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .playback-card {
+
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0px 2px 5px 0px #ccc;
+        display: inline-block;
+        margin: 10px;
+        width: 100px;
+        height: 100px;
+    }
+
+    .revert-card {
+
+        cursor: pointer;
     }
 </style>
