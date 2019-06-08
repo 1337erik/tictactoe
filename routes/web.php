@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,7 +15,15 @@
 
 Route::get( '/', function () {
 
-    return view( 'welcome' );
+    $winners = DB::table( 'games' )
+        ->leftJoin( 'users', 'users.id', '=', 'games.winner_id' )
+        ->selectRaw( 'users.name, count( games.winner_id ) as wins, games.winner_id as winner' )
+        ->where( 'games.winner_id', '!=', '' )
+        ->groupBy( 'winner' )
+        ->get();
+
+    Log::debug( 'winners: ' . print_r( $winners, true ) );
+    return view( 'welcome', compact( 'winners' ) );
 });
 
 Auth::routes();

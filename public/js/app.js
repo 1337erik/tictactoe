@@ -1987,6 +1987,12 @@ __webpack_require__.r(__webpack_exports__);
         });
       }
     },
+    switchPlayerType: function switchPlayerType(player) {
+      if (player.type == 'human') {
+        player.type = 'computer';
+        this.makeZuckerbergProud();
+      } else player.type = 'human';
+    },
     makeZuckerbergProud: function makeZuckerbergProud() {
       // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
       if (!this.gameOver && this.currentPlayer.type == 'computer') {
@@ -2124,6 +2130,15 @@ __webpack_require__.r(__webpack_exports__);
       if (this.winningMetaData.winningCombination != null && this.winningMetaData.winningCombination.includes(id)) base.push('winner-winner');
       if (this.catsGame) base.push('tied-up');
       return base.join(' ');
+    },
+    saveWinner: function saveWinner() {
+      // sync to server
+      axios__WEBPACK_IMPORTED_MODULE_0___default.a.patch('/games/' + this.game.id, {
+        type: 'saveWinner'
+      }).then(function (res) {// console.log( 'response: ', res );
+      })["catch"](function (error) {
+        console.error('Error: ', error);
+      });
     }
   },
   computed: {
@@ -2150,8 +2165,11 @@ __webpack_require__.r(__webpack_exports__);
     },
     catsGame: function catsGame() {
       if (this.totalMoves == this.boardColumns * this.boardRows && this.winningMetaData.winningCombination == null) {
-        console.log('Zuckerberg: you get away this time..');
-        console.log('-- CATS GAME --');
+        if (this.againstAI) {
+          console.log('Zuckerberg: you get away this time..');
+          console.log('-- CATS GAME --');
+        }
+
         return true;
       } else return false;
     },
@@ -2178,7 +2196,9 @@ __webpack_require__.r(__webpack_exports__);
           gameData.winningCombination = combo.x;
           console.log('-- GAME OVER --', 'player ' + gameData.winningPlayer.id + ' has won!');
           if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
-          if (gameData.winningPlayer.type == 'human') console.log('Zuckerberg: WHAT?! I must become stronger..');
+          if (gameData.winningPlayer.type == 'human' && _this4.againstAI) console.log('Zuckerberg: WHAT?! I must become stronger..');
+
+          _this4.saveWinner();
         } else if (combo.emptyCells.length == 0 && combo.o.length == 3) {
           gameData.winningPlayer = _this4.players.find(function (player) {
             return player.marker.toLowerCase() == 'o';
@@ -2186,7 +2206,9 @@ __webpack_require__.r(__webpack_exports__);
           gameData.winningCombination = combo.o;
           console.log('-- GAME OVER --', gameData.winningPlayer.id + ' has won!');
           if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
-          if (gameData.winningPlayer.type == 'human') console.log('Zuckerberg: WHAT?! I must become stronger..');
+          if (gameData.winningPlayer.type == 'human' && _this4.againstAI) console.log('Zuckerberg: WHAT?! I must become stronger..');
+
+          _this4.saveWinner();
         }
       });
       return gameData;
@@ -38237,7 +38259,18 @@ var render = function() {
               [_vm._v("Player: " + _vm._s(player.id))]
             ),
             _vm._v(" "),
-            _c("h5", [_vm._v(_vm._s(player.type))]),
+            _c(
+              "h5",
+              {
+                staticStyle: { cursor: "pointer" },
+                on: {
+                  click: function($event) {
+                    return _vm.switchPlayerType(player)
+                  }
+                }
+              },
+              [_vm._v(_vm._s(player.type) + " ( click to change )")]
+            ),
             _vm._v(" "),
             _c("h5", [_vm._v("Marker: " + _vm._s(player.marker.toUpperCase()))])
           ]

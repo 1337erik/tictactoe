@@ -9,7 +9,7 @@
 
             <li class="menu-list-item">
 
-                <a href="{{ route( 'play.games.index' ) }}">{{ __( 'Play AI' ) }}</a>
+                <a href="{{ route( 'play.games.index' ) }}">{{ __( 'Play Locally' ) }}</a>
             </li>
             <li class="menu-list-item">
 
@@ -24,5 +24,18 @@
                 <a href="{{ route( 'play.games.seePast' ) }}">{{ __( 'See Past Games' ) }}</a>
             </li>
         </ul>
+    </div>
+
+    <div class="main-menu">
+
+        <h3>Leaderboards</h3>
+
+        @foreach ( $winners as $winner )
+
+            <div>
+
+                Player {{ $winner->name }} has {{ $winner->wins }} wins
+            </div>
+        @endforeach
     </div>
 @endsection

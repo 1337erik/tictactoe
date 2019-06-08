@@ -1,30 +1,19 @@
 Challenge details..
 
 Todo:
-    Epic => getting play against AI working
-        1. when navigating over, start a new game
-        2. create a blank state for that game
-        3. upon move, record board position
-        4. implement 'take back turn'
-        6. add migration for game status ( boolean, done or nah )
-        5. upon win,
-            - set status of game to done
-            - figure out how to mark the winner with a point.. figure out the leaderboard thing..
-        6. if a game is done, be able to cycle through the moves.. or states
-        7. display leaderboard on main page
-        8. implement ability to play against another human ( from playAI )
+  ..done for now
 
 
 The MVP for this web application must include:
-  - Playing against the computer
+      - DONE Playing against the computer
   - Leaderboards
 
 Other desired features include, but are not required:
 
- - Hot seat play (two players, one screen)
+    - DONE Hot seat play (two players, one screen)
  - Online play
  - The ability to spectate games in progress
- - Watch previous matches
+    - DONE Watch previous matches
  - Tic-Tac-Toe-Royale
 
 You must use Laravel, Vue, and a relational database. You may use any publicly available packages.

@@ -7,7 +7,7 @@
             <div v-for=" player in players " :key=" player.id " class="player-inner-wrapper">
 
                 <h3 :style=" currentPlayer.id == player.id ? 'color: blue' : '' ">Player: {{ player.id }}</h3>
-                <h5>{{ player.type }}</h5>
+                <h5 @click=" switchPlayerType( player ) " style=" cursor: pointer" >{{ player.type }} ( click to change )</h5>
                 <h5>Marker: {{ player.marker.toUpperCase() }}</h5>
             </div>
         </div>
@@ -110,6 +110,15 @@
                         this.revertMove();
                     });
                 }
+            },
+
+            switchPlayerType( player ){
+
+                if( player.type == 'human' ){
+
+                    player.type = 'computer';
+                    this.makeZuckerbergProud();
+                } else player.type = 'human';
             },
 
 
@@ -298,6 +307,23 @@
 
                 return base.join( ' ' );
             },
+
+
+            saveWinner(){
+
+                // sync to server
+                axios.patch( '/games/' + this.game.id, {
+
+                    type : 'saveWinner'
+                }).then( res => {
+
+                    // console.log( 'response: ', res );
+                })
+                .catch( error => {
+
+                    console.error( 'Error: ', error );
+                });
+            }
         },
         computed: {
 
@@ -332,8 +358,11 @@
 
                 if( this.totalMoves == ( this.boardColumns * this.boardRows ) && this.winningMetaData.winningCombination == null ){
 
-                    console.log( 'Zuckerberg: you get away this time..' );
-                    console.log( '-- CATS GAME --' );
+                    if( this.againstAI ){
+
+                        console.log( 'Zuckerberg: you get away this time..' );
+                        console.log( '-- CATS GAME --' );
+                    }
                     return true;
                 } else return false;
             },
@@ -362,15 +391,19 @@
                         gameData.winningPlayer      = this.players.find( player => player.marker.toLowerCase() == 'x' );
                         gameData.winningCombination = combo.x;
                         console.log( '-- GAME OVER --', 'player ' + gameData.winningPlayer.id + ' has won!' );
-                        if( gameData.winningPlayer.type == 'computer' ) console.log( 'Zuckerberg: LOL gg noob' );
-                        if( gameData.winningPlayer.type == 'human'    ) console.log( 'Zuckerberg: WHAT?! I must become stronger..' );
+                        if( gameData.winningPlayer.type == 'computer'                ) console.log( 'Zuckerberg: LOL gg noob' );
+                        if( gameData.winningPlayer.type == 'human' && this.againstAI ) console.log( 'Zuckerberg: WHAT?! I must become stronger..' );
+
+                        this.saveWinner();
                     } else if( combo.emptyCells.length == 0 && combo.o.length == 3 ){
 
                         gameData.winningPlayer      = this.players.find( player => player.marker.toLowerCase() == 'o' );
                         gameData.winningCombination = combo.o;
                         console.log( '-- GAME OVER --', gameData.winningPlayer.id + ' has won!' );
-                        if( gameData.winningPlayer.type == 'computer' ) console.log( 'Zuckerberg: LOL gg noob' );
-                        if( gameData.winningPlayer.type == 'human'    ) console.log( 'Zuckerberg: WHAT?! I must become stronger..' );
+                        if( gameData.winningPlayer.type == 'computer'                ) console.log( 'Zuckerberg: LOL gg noob' );
+                        if( gameData.winningPlayer.type == 'human' && this.againstAI ) console.log( 'Zuckerberg: WHAT?! I must become stronger..' );
+
+                        this.saveWinner();
                     }
                 });
 

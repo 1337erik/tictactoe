@@ -123,15 +123,24 @@ class GameController extends Controller
     public function update(Request $request, Game $game)
     {
 
-        if( $request->type == 'revert' ){
+        switch( $request->type ){
 
-            return State::orderBy( 'id', 'desc' )->where( 'game_id', $game->id )->take( 2 )->delete();
-        } else {
+            case 'revert':
 
-            return $game->states()->create([
+                return State::orderBy( 'id', 'desc' )->where( 'game_id', $game->id )->take( 2 )->delete();
+                break;
+            case 'move':
 
-                'details' => $request->newState
-            ]);
+                return $game->states()->create([
+
+                    'details' => $request->newState
+                ]);
+                break;
+            case 'saveWinner':
+
+                $game->winner_id = Auth::user()->id;
+                return $game->save() ? $game->toJson() : response( $game->errors, 400 );
+                break;
         }
     }
 

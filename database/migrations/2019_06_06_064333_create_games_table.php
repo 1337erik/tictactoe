@@ -17,6 +17,7 @@ class CreateGamesTable extends Migration
 
             $table->bigIncrements( 'id' );
             $table->unsignedInteger( 'type' )->default( 1 ); // opens us up for different games
+            $table->unsignedInteger( 'winner_id' )->nullable(); // winner of game saved here
             $table->timestamps();
         });
     }
