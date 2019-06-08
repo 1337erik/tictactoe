@@ -30,7 +30,7 @@
 
                     {{ index == 0 ? 'Initial State' : 'Move ' + index }}
                 </div>
-                <div class="playback-card revert-card" @click=" revertMove() " v-if=" gameStates.length > 1 ">
+                <div class="playback-card revert-card" @click=" revertMove() " v-if=" !gameOver && gameStates.length > 1 ">
 
                     Revert Move
                 </div>
@@ -40,6 +40,8 @@
 </template>
 
 <script>
+
+    import axios from 'axios';
 
     export default {
 
@@ -78,19 +80,35 @@
                 let cell = document.getElementById( id );
                 // console.log( 'claiming cellID ' + id + ': ', cell, 'with current value: ', cell.innerHTML.trim() );
 
-                if( !this.winningMetaData.winningCombination && cell.innerHTML.trim() == '' ){
+                if( !this.gameOver && cell.innerHTML.trim() == '' ){
                     // only if a games still on and clicking a blank cell..
 
                     // apply the appropriate marker to the specific cell
                     document.getElementById( id ).innerHTML = this.currentPlayer.marker.toUpperCase();
 
                     // read the board and push state
-                    this.gameStates.push( this.readStateFromCells() );
+                    let newState = this.readStateFromCells();
+                    this.gameStates.push( newState );
 
-                    // update board combinations
-                    this.checkBoardCombinations();
+                    // sync to server
+                    axios.patch( '/games/' + this.game.id, {
 
-                    this.makeZuckerbergProud(); // and check if new player is if AI controlled to prompt 'it' to move..
+                        type : 'move',
+                        newState
+                    }).then( res => {
+                        // console.log( 'response: ', res );
+
+                        // update board combinations
+                        this.checkBoardCombinations();
+
+                        // and if new player is AI controlled, prompt 'it' to move..
+                        this.makeZuckerbergProud();
+                    })
+                    .catch( error => {
+                        console.error( 'Error: ', error );
+
+                        this.revertMove();
+                    });
                 }
             },
 
@@ -98,7 +116,7 @@
             makeZuckerbergProud(){
                 // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
 
-                if( !this.catsGame && this.currentPlayer.type == 'computer' ){
+                if( !this.gameOver && this.currentPlayer.type == 'computer' ){
 
                     const myMarker       = this.currentPlayer.marker.toLowerCase();
                     const opponentMarker = this.opponent.marker.toLowerCase();
@@ -162,19 +180,30 @@
 
             revertMove(){
 
-                // pop the latest state off of gameStates
+                // pop the latest state off of gameStates, if the opponent is Zuckerberg then take 2 off so you can actually move again..
                 this.gameStates.pop();
+                if( this.players.find( player => player.type == 'computer' ) ) this.gameStates.pop();
 
                 // take the latest state
                 const latestState = this.gameStates[ this.gameStates.length - 1 ];
 
-                // sync with the server TODO
+                // sync to server
+                axios.patch( '/games/' + this.game.id, {
 
-                // if status successful, load it to the board
-                this.loadStateIntoCells( latestState );
+                    type : 'revert'
+                }).then( res => {
+                    // console.log( 'response: ', res );
 
-                // update board combinations
-                this.checkBoardCombinations();
+                    // if status successful, load it to the board
+                    this.loadStateIntoCells( latestState );
+
+                    // update board combinations
+                    this.checkBoardCombinations();
+                })
+                .catch( error => {
+
+                    console.error( 'Error: ', error );
+                });
             },
 
 
@@ -301,13 +330,18 @@
 
             catsGame(){
 
-                if( this.totalMoves == 9 && this.winningMetaData.winningCombination == null ){
+                if( this.totalMoves == ( this.boardColumns * this.boardRows ) && this.winningMetaData.winningCombination == null ){
 
                     console.log( 'Zuckerberg: you get away this time..' );
                     console.log( '-- CATS GAME --' );
                     return true;
                 } else return false;
             },
+            gameOver(){
+
+                return ( this.catsGame || this.winningMetaData.winningCombination != null );
+            },
+
 
             againstAI(){
 
@@ -352,6 +386,9 @@
 
             // initialize the board using the latest playback state..
             this.loadStateIntoCells( gameStates[ this.totalMoves ] );
+
+            // initialize board combinations, important for when loading a past game
+            this.checkBoardCombinations();
         }
     }
 </script>

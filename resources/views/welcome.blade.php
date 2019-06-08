@@ -17,11 +17,11 @@
             </li>
             <li class="menu-list-item">
 
-                <a href="{{ route( 'play.games.showLive' ) }}">{{ __( 'Spectate Live' ) }}</a>
+                <a href="{{ route( 'play.games.seeLive' ) }}">{{ __( 'Spectate Live' ) }}</a>
             </li>
             <li class="menu-list-item">
 
-                <a href="{{ route( 'play.games.showPast' ) }}">{{ __( 'See Past Games' ) }}</a>
+                <a href="{{ route( 'play.games.seePast' ) }}">{{ __( 'See Past Games' ) }}</a>
             </li>
         </ul>
     </div>

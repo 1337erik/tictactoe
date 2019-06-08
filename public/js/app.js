@@ -1892,6 +1892,8 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_0__);
 //
 //
 //
@@ -1933,6 +1935,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ['playback', 'game'],
   data: function data() {
@@ -1955,22 +1958,38 @@ __webpack_require__.r(__webpack_exports__);
   },
   methods: {
     claimCell: function claimCell(id) {
+      var _this = this;
+
       var cell = document.getElementById(id); // console.log( 'claiming cellID ' + id + ': ', cell, 'with current value: ', cell.innerHTML.trim() );
 
-      if (!this.winningMetaData.winningCombination && cell.innerHTML.trim() == '') {
+      if (!this.gameOver && cell.innerHTML.trim() == '') {
         // only if a games still on and clicking a blank cell..
         // apply the appropriate marker to the specific cell
         document.getElementById(id).innerHTML = this.currentPlayer.marker.toUpperCase(); // read the board and push state
 
-        this.gameStates.push(this.readStateFromCells()); // update board combinations
+        var newState = this.readStateFromCells();
+        this.gameStates.push(newState); // sync to server
 
-        this.checkBoardCombinations();
-        this.makeZuckerbergProud(); // and check if new player is if AI controlled to prompt 'it' to move..
+        axios__WEBPACK_IMPORTED_MODULE_0___default.a.patch('/games/' + this.game.id, {
+          type: 'move',
+          newState: newState
+        }).then(function (res) {
+          // console.log( 'response: ', res );
+          // update board combinations
+          _this.checkBoardCombinations(); // and if new player is AI controlled, prompt 'it' to move..
+
+
+          _this.makeZuckerbergProud();
+        })["catch"](function (error) {
+          console.error('Error: ', error);
+
+          _this.revertMove();
+        });
       }
     },
     makeZuckerbergProud: function makeZuckerbergProud() {
       // definitely would abstract the move making algorithm into a single function call.. since I use the same loop a few times.. but time..
-      if (!this.catsGame && this.currentPlayer.type == 'computer') {
+      if (!this.gameOver && this.currentPlayer.type == 'computer') {
         var myMarker = this.currentPlayer.marker.toLowerCase();
         var opponentMarker = this.opponent.marker.toLowerCase(); // initialize a set of groups with varying values to move within
 
@@ -2018,15 +2037,28 @@ __webpack_require__.r(__webpack_exports__);
       }
     },
     revertMove: function revertMove() {
-      // pop the latest state off of gameStates
-      this.gameStates.pop(); // take the latest state
+      var _this2 = this;
 
-      var latestState = this.gameStates[this.gameStates.length - 1]; // sync with the server TODO
-      // if status successful, load it to the board
+      // pop the latest state off of gameStates, if the opponent is Zuckerberg then take 2 off so you can actually move again..
+      this.gameStates.pop();
+      if (this.players.find(function (player) {
+        return player.type == 'computer';
+      })) this.gameStates.pop(); // take the latest state
 
-      this.loadStateIntoCells(latestState); // update board combinations
+      var latestState = this.gameStates[this.gameStates.length - 1]; // sync to server
 
-      this.checkBoardCombinations();
+      axios__WEBPACK_IMPORTED_MODULE_0___default.a.patch('/games/' + this.game.id, {
+        type: 'revert'
+      }).then(function (res) {
+        // console.log( 'response: ', res );
+        // if status successful, load it to the board
+        _this2.loadStateIntoCells(latestState); // update board combinations
+
+
+        _this2.checkBoardCombinations();
+      })["catch"](function (error) {
+        console.error('Error: ', error);
+      });
     },
     loadStateIntoCells: function loadStateIntoCells() {
       var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -2106,22 +2138,25 @@ __webpack_require__.r(__webpack_exports__);
       return this.gameStates.length - 1;
     },
     playerCells: function playerCells() {
-      var _this = this;
+      var _this3 = this;
 
       // grab all indexes of the board where the player's marker is found
       var cells = [];
       document.querySelectorAll('.cell').forEach(function (cell, index) {
-        if (cell.innerHTML.toLowerCase() == _this.currentPlayer.marker.toLowerCase()) cells.push(index + 1);
+        if (cell.innerHTML.toLowerCase() == _this3.currentPlayer.marker.toLowerCase()) cells.push(index + 1);
       }); // console.log( 'player has cells: ', cells.join() );
 
       return cells.join();
     },
     catsGame: function catsGame() {
-      if (this.totalMoves == 9 && this.winningMetaData.winningCombination == null) {
+      if (this.totalMoves == this.boardColumns * this.boardRows && this.winningMetaData.winningCombination == null) {
         console.log('Zuckerberg: you get away this time..');
         console.log('-- CATS GAME --');
         return true;
       } else return false;
+    },
+    gameOver: function gameOver() {
+      return this.catsGame || this.winningMetaData.winningCombination != null;
     },
     againstAI: function againstAI() {
       return this.players.find(function (player) {
@@ -2129,7 +2164,7 @@ __webpack_require__.r(__webpack_exports__);
       });
     },
     winningMetaData: function winningMetaData() {
-      var _this2 = this;
+      var _this4 = this;
 
       var gameData = {
         winningPlayer: null,
@@ -2137,7 +2172,7 @@ __webpack_require__.r(__webpack_exports__);
       };
       this.boardCombinations.forEach(function (combo) {
         if (combo.emptyCells.length == 0 && combo.x.length == 3) {
-          gameData.winningPlayer = _this2.players.find(function (player) {
+          gameData.winningPlayer = _this4.players.find(function (player) {
             return player.marker.toLowerCase() == 'x';
           });
           gameData.winningCombination = combo.x;
@@ -2145,7 +2180,7 @@ __webpack_require__.r(__webpack_exports__);
           if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
           if (gameData.winningPlayer.type == 'human') console.log('Zuckerberg: WHAT?! I must become stronger..');
         } else if (combo.emptyCells.length == 0 && combo.o.length == 3) {
-          gameData.winningPlayer = _this2.players.find(function (player) {
+          gameData.winningPlayer = _this4.players.find(function (player) {
             return player.marker.toLowerCase() == 'o';
           });
           gameData.winningCombination = combo.o;
@@ -2165,7 +2200,9 @@ __webpack_require__.r(__webpack_exports__);
     });
     this.gameStates = gameStates; // initialize the board using the latest playback state..
 
-    this.loadStateIntoCells(gameStates[this.totalMoves]);
+    this.loadStateIntoCells(gameStates[this.totalMoves]); // initialize board combinations, important for when loading a past game
+
+    this.checkBoardCombinations();
   }
 });
 
@@ -38256,7 +38293,7 @@ var render = function() {
             ])
           }),
           _vm._v(" "),
-          _vm.gameStates.length > 1
+          !_vm.gameOver && _vm.gameStates.length > 1
             ? _c(
                 "div",
                 {

@@ -21,13 +21,16 @@ Auth::routes();
 Route::get( '/home', 'HomeController@index' )->name( 'home' );
 
 
-Route::get( 'games/seePast',   'GameController@showPast'  )->name( 'play.games.showPast'  );
-Route::get( 'games/seeLive',   'GameController@showLive'  )->name( 'play.games.showLive'  );
-Route::get( 'games/startLive', 'GameController@startLive' )->name( 'play.games.startLive' );
+Route::group( ['middleware' => [ 'auth' ]], function() {
 
-Route::resource( 'games', 'GameController', [
+    Route::get( 'games/seePast',   'GameController@seePast'   )->name( 'play.games.seePast'   );
+    Route::get( 'games/seeLive',   'GameController@seeLive'   )->name( 'play.games.seeLive'   );
+    Route::get( 'games/startLive', 'GameController@startLive' )->name( 'play.games.startLive' );
 
-    'as' => 'play'
-]);
+    Route::resource( 'games', 'GameController', [
 
-Route::apiResource( 'states', 'StateController' );
+        'as' => 'play'
+    ]);
+
+    Route::apiResource( 'states', 'StateController' );
+});
