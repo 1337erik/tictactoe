@@ -1894,6 +1894,8 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var timers__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! timers */ "./node_modules/timers-browserify/main.js");
+/* harmony import */ var timers__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(timers__WEBPACK_IMPORTED_MODULE_1__);
 //
 //
 //
@@ -1935,6 +1937,10 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+
 
 /* harmony default export */ __webpack_exports__["default"] = ({
   props: ['playback', 'game'],
@@ -2066,6 +2072,17 @@ __webpack_require__.r(__webpack_exports__);
         console.error('Error: ', error);
       });
     },
+    replayGame: function replayGame() {
+      var _this3 = this;
+
+      this.gameStates.forEach(function (state, index) {
+        Object(timers__WEBPACK_IMPORTED_MODULE_1__["setTimeout"])(function () {
+          console.log('loading state: ', state);
+
+          _this3.loadStateIntoCells(state);
+        }, index * 500);
+      });
+    },
     loadStateIntoCells: function loadStateIntoCells() {
       var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
       // console.log( 'loading state: ', state );
@@ -2153,12 +2170,12 @@ __webpack_require__.r(__webpack_exports__);
       return this.gameStates.length - 1;
     },
     playerCells: function playerCells() {
-      var _this3 = this;
+      var _this4 = this;
 
       // grab all indexes of the board where the player's marker is found
       var cells = [];
       document.querySelectorAll('.cell').forEach(function (cell, index) {
-        if (cell.innerHTML.toLowerCase() == _this3.currentPlayer.marker.toLowerCase()) cells.push(index + 1);
+        if (cell.innerHTML.toLowerCase() == _this4.currentPlayer.marker.toLowerCase()) cells.push(index + 1);
       }); // console.log( 'player has cells: ', cells.join() );
 
       return cells.join();
@@ -2182,7 +2199,7 @@ __webpack_require__.r(__webpack_exports__);
       });
     },
     winningMetaData: function winningMetaData() {
-      var _this4 = this;
+      var _this5 = this;
 
       var gameData = {
         winningPlayer: null,
@@ -2190,25 +2207,25 @@ __webpack_require__.r(__webpack_exports__);
       };
       this.boardCombinations.forEach(function (combo) {
         if (combo.emptyCells.length == 0 && combo.x.length == 3) {
-          gameData.winningPlayer = _this4.players.find(function (player) {
+          gameData.winningPlayer = _this5.players.find(function (player) {
             return player.marker.toLowerCase() == 'x';
           });
           gameData.winningCombination = combo.x;
           console.log('-- GAME OVER --', 'player ' + gameData.winningPlayer.id + ' has won!');
           if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
-          if (gameData.winningPlayer.type == 'human' && _this4.againstAI) console.log('Zuckerberg: WHAT?! I must become stronger..');
+          if (gameData.winningPlayer.type == 'human' && _this5.againstAI) console.log('Zuckerberg: WHAT?! I must become stronger..');
 
-          _this4.saveWinner();
+          _this5.saveWinner();
         } else if (combo.emptyCells.length == 0 && combo.o.length == 3) {
-          gameData.winningPlayer = _this4.players.find(function (player) {
+          gameData.winningPlayer = _this5.players.find(function (player) {
             return player.marker.toLowerCase() == 'o';
           });
           gameData.winningCombination = combo.o;
           console.log('-- GAME OVER --', gameData.winningPlayer.id + ' has won!');
           if (gameData.winningPlayer.type == 'computer') console.log('Zuckerberg: LOL gg noob');
-          if (gameData.winningPlayer.type == 'human' && _this4.againstAI) console.log('Zuckerberg: WHAT?! I must become stronger..');
+          if (gameData.winningPlayer.type == 'human' && _this5.againstAI) console.log('Zuckerberg: WHAT?! I must become stronger..');
 
-          _this4.saveWinner();
+          _this5.saveWinner();
         }
       });
       return gameData;
@@ -38310,6 +38327,21 @@ var render = function() {
         ? _c("h3", [
             _c("a", { attrs: { href: "/games" } }, [_vm._v("New Game")])
           ])
+        : _vm._e(),
+      _vm._v(" "),
+      _vm.winningMetaData.winningCombination || _vm.catsGame
+        ? _c(
+            "h3",
+            {
+              staticStyle: { color: "#3490dc", cursor: "pointer" },
+              on: {
+                click: function($event) {
+                  return _vm.replayGame()
+                }
+              }
+            },
+            [_vm._v("Watch Replay")]
+          )
         : _vm._e(),
       _vm._v(" "),
       _c(

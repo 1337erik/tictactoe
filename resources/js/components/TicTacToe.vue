@@ -23,7 +23,10 @@
         <div class="playback-bar-outer-wrapper">
 
             <h1>Game Playback</h1>
+
             <h3 v-if=" winningMetaData.winningCombination || catsGame "><a href="/games">New Game</a></h3>
+            <h3 v-if=" winningMetaData.winningCombination || catsGame " @click=" replayGame() " style="color: #3490dc;cursor:pointer">Watch Replay</h3>
+
             <div class="playback-bar-inner-wrap">
 
                 <div class="playback-card" v-for=" ( state, index ) in gameStates " :key=" index ">
@@ -42,6 +45,7 @@
 <script>
 
     import axios from 'axios';
+import { setTimeout } from 'timers';
 
     export default {
 
@@ -215,6 +219,18 @@
                 });
             },
 
+
+            replayGame(){
+
+                this.gameStates.forEach( ( state, index ) => {
+
+                    setTimeout( () => {
+
+                        console.log( 'loading state: ', state );
+                        this.loadStateIntoCells( state );
+                    }, index * 500 );
+                });
+            },
 
             loadStateIntoCells( state = null ){
 

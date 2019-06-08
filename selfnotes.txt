@@ -6,7 +6,7 @@ Todo:
 
 The MVP for this web application must include:
       - DONE Playing against the computer
-  - Leaderboards
+      - DONE Leaderboards
 
 Other desired features include, but are not required:
 
