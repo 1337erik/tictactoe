@@ -2051,16 +2051,24 @@ __webpack_require__.r(__webpack_exports__);
     revertMove: function revertMove() {
       var _this2 = this;
 
-      // pop the latest state off of gameStates, if the opponent is Zuckerberg then take 2 off so you can actually move again..
+      var amount = 1; // pop the latest state off of gameStates, if the opponent is Zuckerberg then take 2 off so you can actually move again..
+
       this.gameStates.pop();
+
       if (this.players.find(function (player) {
         return player.type == 'computer';
-      })) this.gameStates.pop(); // take the latest state
+      })) {
+        amount++; // make sure the server knows to pop this too!
+
+        this.gameStates.pop();
+      } // take the latest state
+
 
       var latestState = this.gameStates[this.gameStates.length - 1]; // sync to server
 
       axios__WEBPACK_IMPORTED_MODULE_0___default.a.patch('/games/' + this.game.id, {
-        type: 'revert'
+        type: 'revert',
+        amount: amount
       }).then(function (res) {
         // console.log( 'response: ', res );
         // if status successful, load it to the board

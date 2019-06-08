@@ -193,9 +193,15 @@ import { setTimeout } from 'timers';
 
             revertMove(){
 
+                let amount = 1;
+
                 // pop the latest state off of gameStates, if the opponent is Zuckerberg then take 2 off so you can actually move again..
                 this.gameStates.pop();
-                if( this.players.find( player => player.type == 'computer' ) ) this.gameStates.pop();
+                if( this.players.find( player => player.type == 'computer' ) ) {
+
+                    amount++; // make sure the server knows to pop this too!
+                    this.gameStates.pop();
+                }
 
                 // take the latest state
                 const latestState = this.gameStates[ this.gameStates.length - 1 ];
@@ -203,7 +209,8 @@ import { setTimeout } from 'timers';
                 // sync to server
                 axios.patch( '/games/' + this.game.id, {
 
-                    type : 'revert'
+                    type   : 'revert',
+                    amount
                 }).then( res => {
                     // console.log( 'response: ', res );
 

@@ -127,7 +127,7 @@ class GameController extends Controller
 
             case 'revert':
 
-                return State::orderBy( 'id', 'desc' )->where( 'game_id', $game->id )->take( 2 )->delete();
+                return State::orderBy( 'id', 'desc' )->where( 'game_id', $game->id )->take( $request->amount )->delete();
                 break;
             case 'move':
 
